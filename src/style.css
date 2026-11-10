@@ -1,0 +1,86 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --safe-top: 54px;
+  --safe-bottom: 34px;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+}
+
+html {
+  touch-action: manipulation;
+  overflow-x: auto;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+body {
+  min-height: 100%;
+  overflow-x: auto;
+  background: #101216;
+}
+
+@media (max-width: 520px) {
+  body {
+    overflow: hidden;
+  }
+}
+
+.rise-enter-active,
+.rise-leave-active {
+  transition: opacity 0.28s ease, transform 0.32s ease;
+}
+
+.rise-enter-from {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.rise-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.slot > * {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-enter-active,
+  .rise-leave-active {
+    transition: none;
+  }
+}
