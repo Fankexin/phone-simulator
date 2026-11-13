@@ -13,6 +13,7 @@
  * contacts[].avatar：微信头像图片地址。不写就用色块和 initial。
  * contacts[].wxid：微信号，用拼音。
  * contacts[].cover：朋友圈封面图。
+ * friends[]：微信通讯录里的好友，写联系人 id。
  * requests[]：{ id, contact, message, status:'pending' }。新的朋友里还没通过的好友申请。
  *
  * meta.passcode：锁屏密码。写了之后，上滑、点通知和相机都要先输入。
@@ -105,7 +106,20 @@ export const story = {
       color: '#6a8f7a',
       wxid: 'banzhuren',
     },
+    zhe: {
+      name: '阿哲',
+      initial: '哲',
+      color: '#b4533a',
+      wxid: 'azhe',
+    },
+    zhou: {
+      name: '老周',
+      initial: '周',
+      color: '#7a6848',
+      wxid: 'laozhou',
+    },
   },
+  friends: ['tao', 'teacher', 'zhe', 'zhou'],
   requests: [
     { id: 'fang', contact: 'fang', message: '我是方一鸣。隔壁班的。', status: 'pending' },
   ],
@@ -204,6 +218,49 @@ export const story = {
           { id: 'd20-9', from: 'me', text: '你到底在哪。', time: '12月12日 21:00' },
         ],
       },
+    },
+    {
+      id: 'zhe',
+      app: 'wechat',
+      contact: 'zhe',
+      unread: 0,
+      script: [
+        { type: 'text', id: 'zhe-1', from: 'zhe', time: '2023年11月25日 19:00', text: '陈晃，最近怎么不来练了。' },
+        { type: 'text', id: 'zhe-2', from: 'me', time: '2023年11月25日 21:30', text: '有事。过阵子去。' },
+        { type: 'text', id: 'zhe-3', from: 'zhe', time: '2023年12月20日 18:10', text: '拳套还在馆里，给你收柜子里了。' },
+        { type: 'text', id: 'zhe-4', from: 'me', time: '2023年12月20日 19:05', text: '谢了。' },
+        { type: 'text', id: 'zhe-5', from: 'zhe', time: '2024年4月10日 20:30', text: '这周六来不来，新来一个打左架的。' },
+        { type: 'text', id: 'zhe-6', from: 'me', time: '2024年4月10日 21:15', text: '来。' },
+        { type: 'text', id: 'zhe-7', from: 'zhe', time: '2024年4月13日 22:40', text: '你今天那个后手不错。' },
+        { type: 'text', id: 'zhe-8', from: 'me', time: '2024年4月13日 22:45', text: '还行。' },
+        { type: 'text', id: 'zhe-9', from: 'zhe', time: '2025年6月18日 19:20', text: '馆里下个月比赛，你报不报。' },
+        { type: 'text', id: 'zhe-10', from: 'me', time: '2025年6月18日 20:02', text: '报。' },
+        { type: 'text', id: 'zhe-11', from: 'zhe', time: '2025年7月20日 23:10', text: '打得可以。下次别老用脸接拳。' },
+        { type: 'text', id: 'zhe-12', from: 'me', time: '2025年7月20日 23:12', text: '知道了。' },
+        { type: 'text', id: 'zhe-13', from: 'zhe', time: '2026年8月2日 21:30', text: '明天来不来。' },
+        { type: 'text', id: 'zhe-14', from: 'me', time: '2026年8月2日 21:33', text: '来。' },
+      ],
+    },
+    {
+      id: 'zhou',
+      app: 'wechat',
+      contact: 'zhou',
+      unread: 0,
+      script: [
+        { type: 'text', id: 'zhou-1', from: 'zhou', time: '2023年11月21日 17:20', text: '你要的那个化油器到了，什么时候来拿。' },
+        { type: 'text', id: 'zhou-2', from: 'me', time: '2023年11月21日 18:05', text: '明天。' },
+        { type: 'text', id: 'zhou-3', from: 'zhou', time: '2023年11月22日 19:40', text: '化油器拿走了？钱还没给。' },
+        { type: 'text', id: 'zhou-4', from: 'me', time: '2023年11月22日 20:15', text: '明天给。' },
+        { type: 'text', id: 'zhou-5', from: 'zhou', time: '2023年12月5日 16:30', text: '化油器钱不用给了。你那天没来拿，我先装我车上了。' },
+        { type: 'text', id: 'zhou-6', from: 'me', time: '2023年12月5日 17:10', text: '行。下次算。' },
+        { type: 'text', id: 'zhou-7', from: 'zhou', time: '2024年5月8日 14:20', text: '链条油到了，给你留了一瓶。' },
+        { type: 'text', id: 'zhou-8', from: 'me', time: '2024年5月8日 15:00', text: '周末去拿。' },
+        { type: 'text', id: 'zhou-9', from: 'zhou', time: '2025年11月2日 10:30', text: '你那车最近怎么样。' },
+        { type: 'text', id: 'zhou-10', from: 'me', time: '2025年11月2日 11:15', text: '还行。就是有点抖。' },
+        { type: 'text', id: 'zhou-11', from: 'zhou', time: '2025年11月2日 11:20', text: '过来看看。' },
+        { type: 'text', id: 'zhou-12', from: 'zhou', time: '2026年9月20日 16:40', text: '车修好了没。' },
+        { type: 'text', id: 'zhou-13', from: 'me', time: '2026年9月20日 18:00', text: '快了。' },
+      ],
     },
     {
       id: 'sms-tao',
@@ -350,6 +407,11 @@ export const story = {
       contact: 'me',
       at: '2024-01-01T20:30:00',
       images: ['https://i.ibb.co/KpkdBSz8/6new.jpg', 'https://i.ibb.co/20XYFs0X/5new.jpg'],
+      likes: ['zhe'],
+      comments: [
+        { from: 'zhe', text: '绷带缠多了，脑子也缠上了？' },
+        { from: 'me', to: 'zhe', text: '明天来。你试试我脑子缠没缠。' },
+      ],
       text: '我喜欢拳击给我带来的震颤\n尤其是绷带缠绕而上的触感\n\n也喜欢被汗水浸透\n一呼一吸之间，都是活着的证明\n\n这些也都是令我喜悦的事物\n\n但我不喜欢拳击馆里昏暗的光线\n也不喜欢淋漓尽致后更多的空虚',
     },
     {
@@ -411,7 +473,7 @@ export const story = {
       contact: 'me',
       at: '2023-10-23T18:40:00',
       image: 'https://i.ibb.co/vCXSDhVG/2new.jpg',
-      likes: ['tao'],
+      likes: ['tao', 'zhou'],
       comments: [
         { from: 'tao', text: '那你以后别用笔了。' },
         { from: 'me', to: 'tao', text: '你管这么宽，我是不是该给你个名分。' },

@@ -101,6 +101,17 @@ function createPhone() {
       })
   }
 
+  function wechatFriends() {
+    return (story.friends || [])
+      .filter((id) => id !== 'me' && story.contacts[id])
+      .map((id) => ({ id, contact: contactOf(id) }))
+      .sort((a, b) => {
+        const left = String(a.contact.wxid || a.contact.name || '')
+        const right = String(b.contact.wxid || b.contact.name || '')
+        return left.localeCompare(right, 'en', { sensitivity: 'base' })
+      })
+  }
+
   function badgeCount(appId) {
     return threadsFor(appId).reduce((sum, thread) => sum + thread.badge, 0)
   }
@@ -260,6 +271,7 @@ function createPhone() {
     momentsOf,
     projection,
     threadsFor,
+    wechatFriends,
     badgeCount,
     photosIn,
     pickUp,

@@ -26,7 +26,22 @@ const phone = usePhone()
 const { wechatTab } = phone
 const unread = computed(() => phone.badgeCount('wechat'))
 const heading = computed(() => (unread.value ? `微信(${unread.value})` : '微信'))
-const contacts = computed(() => phone.threadsFor('wechat'))
+const friends = computed(() => phone.wechatFriends())
+const friendGroups = computed(() => {
+  const map = new Map()
+  for (const item of friends.value) {
+    const letter = letterOf(item.contact)
+    if (!map.has(letter)) map.set(letter, [])
+    map.get(letter).push(item)
+  }
+  return [...map.entries()]
+    .sort((a, b) => {
+      if (a[0] === '#') return 1
+      if (b[0] === '#') return -1
+      return a[0].localeCompare(b[0], 'en')
+    })
+    .map(([letter, items]) => ({ letter, items }))
+})
 
 const contactShortcuts = [
   { id: 'new', name: '新的朋友', icon: newFriendIcon },
@@ -50,9 +65,11 @@ function openRow(id) {
   if (id === 'moments') phone.openMoments()
 }
 
-function letterOf(name) {
-  const ch = (name || '#').trim().charAt(0)
-  return /[A-Za-z]/.test(ch) ? ch.toUpperCase() : ch
+function letterOf(contact) {
+  const raw = String(contact?.wxid || contact?.name || '#').trim()
+  const ch = raw.charAt(0)
+  if (/[A-Za-z]/.test(ch)) return ch.toUpperCase()
+  return '#'
 }
 
 function listTime(time) {
@@ -115,6 +132,7 @@ function listTime(time) {
         :key="thread.id"
         type="button"
         class="wxr"
+        :class="{ pinned: thread.pinned }"
         @click="phone.openThread(thread.id)"
       >
         <span class="av">
@@ -145,11 +163,17 @@ function listTime(time) {
           <span class="meta name-only"><b>{{ item.name }}</b></span>
         </button>
       </div>
-      <template v-for="thread in contacts" :key="thread.id">
-        <p class="letter">{{ letterOf(thread.contact.name) }}</p>
-        <button type="button" class="wxr" @click="phone.openContact(thread.contactId)">
-          <span class="av"><Avatar :contact="thread.contact" :size="40" /></span>
-          <span class="meta name-only"><b>{{ thread.contact.name }}</b></span>
+      <template v-for="group in friendGroups" :key="group.letter">
+        <p class="letter">{{ group.letter }}</p>
+        <button
+          v-for="item in group.items"
+          :key="item.id"
+          type="button"
+          class="wxr"
+          @click="phone.openContact(item.id)"
+        >
+          <span class="av"><Avatar :contact="item.contact" :size="40" /></span>
+          <span class="meta name-only"><b>{{ item.contact.name }}</b></span>
         </button>
       </template>
     </div>
@@ -297,10 +321,19 @@ function listTime(time) {
   height: 68px;
   padding-left: 14px;
   text-align: left;
+  background: #fff;
+}
+
+.wxr.pinned {
+  background: #ededed;
 }
 
 .wxr.mute {
   pointer-events: none;
+}
+
+.list:not(.contacts) .wxr.pinned .meta {
+  border-bottom-color: #e0e0e0;
 }
 
 .av {

@@ -62,6 +62,10 @@ export function validateStory(story) {
     if (!contacts.has(request.contact)) errors.push(`好友申请 ${request.id} 缺少联系人`)
   }
 
+  for (const id of story.friends || []) {
+    if (!contacts.has(id)) errors.push(`好友 ${id} 不在联系人里`)
+  }
+
   return errors
 }
 
