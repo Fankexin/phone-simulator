@@ -5,6 +5,13 @@ import { meets, projectThread, validateStory } from './engine.js'
 
 const saveKey = `found-phone:${story.meta.id}:${story.meta.revision}`
 
+function messageStamp(time) {
+  const match = String(time || '').match(/^(\d{4})年(\d{1,2})月(\d{1,2})日(?:\s+(\d{1,2}):(\d{2}))?/)
+  if (!match) return null
+  const [, year, month, day, hour = '0', minute = '0'] = match
+  return Date.UTC(+year, +month - 1, +day, +hour, +minute)
+}
+
 function blankProgress() {
   return {
     phase: 'off',
@@ -29,6 +36,10 @@ function createPhone() {
   const route = computed(() => progress.stack[progress.stack.length - 1] || null)
   const visibleMoments = computed(() => story.moments.filter((item) => meets(item.requires, {})))
   const visibleNotes = computed(() => story.notes.filter((item) => meets(item.requires, {})))
+
+  function momentsOf(contactId) {
+    return visibleMoments.value.filter((item) => item.contact === contactId)
+  }
   const notices = computed(() =>
     story.threads
       .filter((thread) => !progress.read[thread.id] && thread.unread)
@@ -74,12 +85,20 @@ function createPhone() {
         const last = projected.messages[projected.messages.length - 1]
         return {
           ...thread,
+          contactId: thread.contact,
           contact: contactOf(thread.contact),
           last,
           badge: progress.read[thread.id] ? 0 : thread.unread || 0,
         }
       })
-      .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))
+      .sort((a, b) => {
+        const pin = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))
+        if (pin) return pin
+        const left = messageStamp(a.last?.time)
+        const right = messageStamp(b.last?.time)
+        if (left == null || right == null) return 0
+        return right - left
+      })
   }
 
   function badgeCount(appId) {
@@ -120,9 +139,22 @@ function createPhone() {
     progress.stack = [...progress.stack, { app: thread.app, thread: threadId }]
   }
 
-  function openMoments() {
+  function openContact(contactId) {
+    if (!story.contacts[contactId]) return
+    const top = progress.stack[progress.stack.length - 1]
+    if (top?.view === 'contact' && top.contact === contactId) return
+    progress.stack = [...progress.stack, { app: 'wechat', view: 'contact', contact: contactId }]
+  }
+
+  function openMoments(contactId) {
     progress.momentsStale = false
-    progress.stack = [...progress.stack, { app: 'wechat', view: 'moments' }]
+    const next = { app: 'wechat', view: 'moments' }
+    if (contactId && story.contacts[contactId]) next.contact = contactId
+    progress.stack = [...progress.stack, next]
+  }
+
+  function openNewFriends() {
+    progress.stack = [...progress.stack, { app: 'wechat', view: 'new-friends' }]
   }
 
   function openChatInfo(threadId) {
@@ -225,6 +257,7 @@ function createPhone() {
     darkChrome,
     wechatTab,
     contactOf,
+    momentsOf,
     projection,
     threadsFor,
     badgeCount,
@@ -234,7 +267,9 @@ function createPhone() {
     openFromLock,
     openApp,
     openThread,
+    openContact,
     openMoments,
+    openNewFriends,
     openChatInfo,
     openFindChat,
     openFindDate,

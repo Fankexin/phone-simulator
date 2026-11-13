@@ -12,6 +12,7 @@ const props = defineProps({
 const phone = usePhone()
 const { pop } = phone
 const scroller = ref(null)
+const showTop = ref(false)
 const thread = computed(() => phone.story.threads.find((item) => item.id === props.threadId))
 const contact = computed(() => phone.contactOf(thread.value?.contact))
 const me = computed(() => phone.contactOf('me'))
@@ -23,9 +24,19 @@ function showTime(index) {
   return !previous || previous.time !== current.time
 }
 
+function onScroll() {
+  showTop.value = Boolean(scroller.value && scroller.value.scrollTop > 48)
+}
+
+function toTop() {
+  scroller.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 async function stick() {
   await nextTick()
-  if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight
+  if (!scroller.value) return
+  scroller.value.scrollTop = scroller.value.scrollHeight
+  onScroll()
 }
 
 onMounted(stick)
@@ -53,14 +64,30 @@ watch(() => view.value.messages.length, stick)
       </div>
       <span />
     </header>
-    <div ref="scroller" class="log">
+    <div ref="scroller" class="log" @scroll="onScroll">
       <template v-for="(msg, index) in view.messages" :key="msg.id">
         <p v-if="showTime(index)" class="stamp">{{ msg.time }}</p>
         <p v-if="msg.from === 'system'" class="system">{{ msg.text }}</p>
         <div v-else class="line" :class="{ me: msg.from === 'me' }">
-          <Avatar v-if="theme === 'wechat' && msg.from !== 'me'" :contact="contact" :size="40" />
+          <button
+            v-if="theme === 'wechat' && msg.from !== 'me'"
+            type="button"
+            class="face"
+            aria-label="个人资料"
+            @click="phone.openContact(thread.contact)"
+          >
+            <Avatar :contact="contact" :size="40" />
+          </button>
           <p class="bubble">{{ msg.text }}</p>
-          <Avatar v-if="theme === 'wechat' && msg.from === 'me'" :contact="me" :size="40" />
+          <button
+            v-if="theme === 'wechat' && msg.from === 'me'"
+            type="button"
+            class="face"
+            aria-label="个人资料"
+            @click="phone.openContact('me')"
+          >
+            <Avatar :contact="me" :size="40" />
+          </button>
         </div>
       </template>
     </div>
@@ -75,16 +102,45 @@ watch(() => view.value.messages.length, stick)
       <i>iMessage</i>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z" /><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3" /></svg>
     </div>
+    <button v-if="theme === 'sms' && showTop" type="button" class="to-top" aria-label="回到顶部" @click="toTop">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14.5 12 8.5l6 6" /></svg>
+    </button>
   </section>
 </template>
 
 <style scoped>
 .chat {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
   background: #ededed;
   color: #111;
+}
+
+.to-top {
+  position: absolute;
+  right: 14px;
+  bottom: calc(64px + var(--safe-bottom));
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  color: #007aff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+.to-top svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .chat[data-theme='sms'] {
@@ -221,6 +277,12 @@ watch(() => view.value.messages.length, stick)
 
 .line.me {
   justify-content: flex-end;
+}
+
+.face {
+  display: block;
+  flex: none;
+  padding: 0;
 }
 
 .bubble {

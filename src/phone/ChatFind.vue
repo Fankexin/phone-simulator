@@ -101,9 +101,25 @@ function showTime(index) {
           <p v-if="showTime(index)" class="stamp">{{ msg.time }}</p>
           <p v-if="msg.from === 'system'" class="system">{{ msg.text }}</p>
           <div v-else class="line" :class="{ me: msg.from === 'me' }">
-            <Avatar v-if="msg.from !== 'me'" :contact="contact" :size="40" />
+            <button
+              v-if="msg.from !== 'me'"
+              type="button"
+              class="face"
+              aria-label="个人资料"
+              @click="phone.openContact(thread.contact)"
+            >
+              <Avatar :contact="contact" :size="40" />
+            </button>
             <p class="bubble">{{ msg.text }}</p>
-            <Avatar v-if="msg.from === 'me'" :contact="me" :size="40" />
+            <button
+              v-if="msg.from === 'me'"
+              type="button"
+              class="face"
+              aria-label="个人资料"
+              @click="phone.openContact('me')"
+            >
+              <Avatar :contact="me" :size="40" />
+            </button>
           </div>
         </template>
         <p v-if="!dayMessages.length" class="empty">这一天没有聊天记录</p>
@@ -304,6 +320,12 @@ header svg,
 
 .line.me {
   justify-content: flex-end;
+}
+
+.face {
+  display: block;
+  flex: none;
+  padding: 0;
 }
 
 .bubble {

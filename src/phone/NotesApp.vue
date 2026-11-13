@@ -11,7 +11,7 @@ const listed = computed(() =>
 )
 
 function preview(body) {
-  return body.replaceAll('\n', ' ')
+  return body.replace(/\s+/g, ' ').trim()
 }
 </script>
 
@@ -50,10 +50,7 @@ function preview(body) {
 
   <section v-else class="list">
     <header class="hero">
-      <button type="button" class="folders" tabindex="-1">
-        <svg viewBox="0 0 12 20"><path d="M10 2 2 10l8 8" /></svg>
-        文件夹
-      </button>
+      <button type="button" class="folders" tabindex="-1">文件夹</button>
       <button type="button" class="more" tabindex="-1" aria-label="更多">•••</button>
     </header>
     <div class="scroll">
@@ -110,7 +107,6 @@ section {
   font-size: 17px;
 }
 
-.folders svg,
 .bar svg {
   width: 12px;
   height: 20px;

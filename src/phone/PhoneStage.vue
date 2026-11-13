@@ -29,7 +29,7 @@ const screenKey = computed(() => {
   const route = phone.route.value
   if (phone.progress.phase !== 'home') return phone.progress.phase
   if (!route) return 'home'
-  return [route.app, route.view, route.thread, route.day, route.album, route.photo, route.note]
+  return [route.app, route.view, route.thread, route.day, route.note, route.contact]
     .filter(Boolean)
     .join(':')
 })
@@ -37,13 +37,6 @@ const screenKey = computed(() => {
 
 <template>
   <main class="stage">
-    <aside class="aside">
-      <p class="kicker">交互式捡手机</p>
-      <h1>{{ phone.story.meta.title }}</h1>
-      <p>{{ phone.story.meta.blurb }}</p>
-      <p class="path">剧情数据在 <code>src/story/story.js</code></p>
-    </aside>
-
     <div class="device" :class="{ off: phone.progress.phase === 'off' }">
       <i class="side silent" aria-hidden="true" />
       <i class="side vol-up" aria-hidden="true" />
@@ -86,49 +79,11 @@ const screenKey = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 36px;
   padding: 24px;
   background:
     radial-gradient(ellipse at 50% 115%, rgba(196, 132, 74, 0.18), transparent 46%),
     radial-gradient(ellipse at 50% 0%, rgba(86, 110, 140, 0.22), transparent 42%),
     #121418;
-}
-
-.aside {
-  width: min(240px, 100%);
-  color: #d9d3c8;
-}
-
-.kicker {
-  margin: 0 0 8px;
-  color: #b9a48a;
-  font-size: 13px;
-  letter-spacing: 0.16em;
-}
-
-h1 {
-  margin: 0 0 12px;
-  font-size: 40px;
-  font-weight: 620;
-  letter-spacing: -0.04em;
-}
-
-.aside p {
-  margin: 0;
-  color: #b7b1a6;
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.path {
-  margin-top: 16px !important;
-  color: #8f897f !important;
-  font-size: 13px !important;
-}
-
-code {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
 }
 
 .device {
@@ -284,25 +239,9 @@ button.grip {
   75% { transform: translateX(1px) rotate(0.2deg); }
 }
 
-@media (max-width: 900px) {
-  .stage {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .aside {
-    text-align: center;
-  }
-}
-
 @media (max-width: 520px) {
   .stage {
-    gap: 0;
     padding: 0;
-  }
-
-  .aside {
-    display: none;
   }
 
   .device {

@@ -9,7 +9,9 @@ const phone = usePhone()
 const filter = ref('all')
 const tab = ref('recent')
 const calls = computed(() =>
-  phone.story.calls.filter((item) => filter.value === 'all' || item.direction === 'missed'),
+  [...phone.story.calls]
+    .reverse()
+    .filter((item) => filter.value === 'all' || missed(item)),
 )
 const contacts = computed(() =>
   Object.entries(phone.story.contacts)
@@ -17,14 +19,23 @@ const contacts = computed(() =>
     .map(([, contact]) => contact),
 )
 
+function missed(call) {
+  return call.type === 'incoming' && call.status === 'missed'
+}
+
 function label(call) {
-  if (call.direction === 'missed') return '未接来电'
-  if (call.direction === 'out') return '去电'
+  if (missed(call)) return '未接来电'
+  if (call.type === 'outgoing') return '去电'
   return '来电'
 }
 
-function arrowOf(direction) {
-  return direction === 'out' ? arrowOut : arrowIn
+function detail(call) {
+  if (missed(call)) return ''
+  return call.duration || ''
+}
+
+function arrowOf(call) {
+  return call.type === 'outgoing' ? arrowOut : arrowIn
 }
 </script>
 
@@ -41,14 +52,14 @@ function arrowOf(direction) {
     </div>
 
     <ul v-if="tab === 'recent'" class="list">
-      <li v-for="call in calls" :key="call.id" :class="{ missed: call.direction === 'missed' }">
+      <li v-for="call in calls" :key="call.id" :class="{ missed: missed(call) }">
         <Avatar :contact="phone.contactOf(call.contact)" :size="40" round />
         <span class="copy">
           <b>{{ phone.contactOf(call.contact).name }}</b>
           <small>
-            <img class="kind" :class="{ red: call.direction === 'missed' }" :src="arrowOf(call.direction)" alt="" />
+            <img class="kind" :class="{ red: missed(call) }" :src="arrowOf(call)" alt="" />
             {{ label(call) }}
-            <template v-if="call.detail"> · {{ call.detail }}</template>
+            <template v-if="detail(call)"> · {{ detail(call) }}</template>
           </small>
         </span>
         <time>{{ call.time }}</time>
@@ -172,14 +183,23 @@ small {
 }
 
 b {
+  overflow: hidden;
   font-size: 17px;
   font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 small,
 time {
   color: #8e8e93;
   font-size: 14px;
+}
+
+time {
+  flex: none;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 small {

@@ -17,10 +17,13 @@ let pending = null
 let timer = 0
 let clockTimer = 0
 const clock = ref('')
+const dateLabel = ref('')
+const weekNames = ['日', '一', '二', '三', '四', '五', '六']
 
 function tickClock() {
   const date = new Date()
   clock.value = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
+  dateLabel.value = `${date.getMonth() + 1}月${date.getDate()}日 星期${weekNames[date.getDay()]}`
   clockTimer = window.setTimeout(tickClock, 60000 - (date.getSeconds() * 1000 + date.getMilliseconds()))
 }
 
@@ -102,9 +105,16 @@ onUnmounted(() => {
 
 <template>
   <section class="lock" :class="{ lit: flash }" @pointerdown="down" @pointerup="up">
-    <div class="wall" aria-hidden="true" />
+    <div class="wall" aria-hidden="true">
+      <img
+        v-if="story.meta.lockWallpaper"
+        :src="story.meta.lockWallpaper"
+        alt=""
+        referrerpolicy="no-referrer"
+      />
+    </div>
     <template v-if="!asking">
-    <p class="date">{{ story.meta.date }}</p>
+    <p class="date">{{ dateLabel }}</p>
     <p class="clock">{{ clock }}</p>
     <div class="notices">
       <button
@@ -175,26 +185,28 @@ onUnmounted(() => {
 .wall {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   background:
     radial-gradient(circle at 78% 18%, rgba(255, 236, 206, 0.95) 0 34px, rgba(255, 196, 130, 0.25) 35px, transparent 90px),
     linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.45)),
     linear-gradient(180deg, #24344c 0%, #6d88a8 30%, #e09a72 62%, #1a140f 100%);
 }
 
+.wall img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 .wall::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 34%;
-  background:
-    linear-gradient(#120e0c, #120e0c) 6% 100% / 16% 48% no-repeat,
-    linear-gradient(#1c1612, #1c1612) 24% 100% / 9% 66% no-repeat,
-    linear-gradient(#0e0c0a, #0e0c0a) 40% 100% / 20% 42% no-repeat,
-    linear-gradient(#241910, #241910) 64% 100% / 12% 74% no-repeat,
-    linear-gradient(#100e0c, #100e0c) 82% 100% / 18% 54% no-repeat;
-  opacity: 0.9;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.08) 42%, rgba(0, 0, 0, 0.42));
+  pointer-events: none;
 }
 
 .lock.lit .wall {

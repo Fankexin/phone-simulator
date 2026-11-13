@@ -12,6 +12,14 @@ function apps(ids) {
 
 <template>
   <section class="home">
+    <img
+      v-if="phone.story.meta.homeWallpaper"
+      class="wall"
+      :src="phone.story.meta.homeWallpaper"
+      alt=""
+      referrerpolicy="no-referrer"
+      aria-hidden="true"
+    />
     <div class="grid">
       <button
         v-for="app in apps(phone.story.home.grid)"
@@ -62,30 +70,34 @@ function apps(ids) {
   flex-direction: column;
   padding: calc(68px + var(--call-gap, 0px)) 16px 18px;
   color: #fff;
+  overflow: hidden;
   background:
     radial-gradient(circle at 86% 8%, rgba(255, 236, 206, 0.55) 0 18px, transparent 70px),
     linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.35)),
     linear-gradient(180deg, #24344c 0%, #6d88a8 28%, #c98462 58%, #1a140f 100%);
 }
 
+.wall {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
 .home::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 28%;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
-  background:
-    linear-gradient(#120e0c, #120e0c) 8% 100% / 14% 46% no-repeat,
-    linear-gradient(#1c1612, #1c1612) 28% 100% / 8% 62% no-repeat,
-    linear-gradient(#0e0c0a, #0e0c0a) 46% 100% / 18% 40% no-repeat,
-    linear-gradient(#241910, #241910) 68% 100% / 11% 70% no-repeat,
-    linear-gradient(#100e0c, #100e0c) 84% 100% / 16% 50% no-repeat;
-  opacity: 0.85;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.06) 48%, rgba(0, 0, 0, 0.38));
 }
 
-.home > * {
+.home > :not(.wall) {
   position: relative;
   z-index: 1;
 }

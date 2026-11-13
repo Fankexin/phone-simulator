@@ -45,10 +45,21 @@ export function validateStory(story) {
 
   for (const moment of story.moments || []) {
     if (!contacts.has(moment.contact)) errors.push(`朋友圈 ${moment.id} 缺少联系人`)
+    for (const id of moment.likes || []) {
+      if (!contacts.has(id)) errors.push(`朋友圈 ${moment.id} 的点赞人 ${id} 不在联系人里`)
+    }
+    for (const comment of moment.comments || []) {
+      if (!contacts.has(comment.from)) errors.push(`朋友圈 ${moment.id} 的评论人 ${comment.from} 不在联系人里`)
+      if (comment.to && !contacts.has(comment.to)) errors.push(`朋友圈 ${moment.id} 的回复对象 ${comment.to} 不在联系人里`)
+    }
   }
 
   for (const call of story.calls || []) {
     if (!contacts.has(call.contact)) errors.push(`通话 ${call.id} 缺少联系人`)
+  }
+
+  for (const request of story.requests || []) {
+    if (!contacts.has(request.contact)) errors.push(`好友申请 ${request.id} 缺少联系人`)
   }
 
   return errors

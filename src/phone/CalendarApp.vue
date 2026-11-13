@@ -3,29 +3,74 @@ import { computed, ref } from 'vue'
 import { usePhone } from './usePhone.js'
 
 const phone = usePhone()
-const data = phone.story.calendar
-const selected = ref(data?.today || 1)
+const now = new Date()
+const cursor = ref(new Date(now.getFullYear(), now.getMonth(), 1))
+const selected = ref(now.getDate())
 const week = ['一', '二', '三', '四', '五', '六', '日']
 
-const cells = computed(() => {
-  if (!data) return []
-  return [...Array.from({ length: data.lead }, () => null), ...Array.from({ length: data.days }, (_, index) => index + 1)]
+const month = computed(() => {
+  const year = cursor.value.getFullYear()
+  const monthIndex = cursor.value.getMonth()
+  const firstWeekday = new Date(year, monthIndex, 1).getDay()
+  return {
+    year,
+    month: monthIndex + 1,
+    label: `${monthIndex + 1}月`,
+    days: new Date(year, monthIndex + 1, 0).getDate(),
+    lead: (firstWeekday + 6) % 7,
+    today: year === now.getFullYear() && monthIndex === now.getMonth() ? now.getDate() : 0,
+  }
 })
 
-const events = computed(() => (data?.events || []).filter((item) => item.day === selected.value))
-const when = computed(() => `${data?.label || ''}${selected.value}日 周${week[(data?.lead + selected.value - 1) % 7]}`)
+const cells = computed(() => [
+  ...Array.from({ length: month.value.lead }, () => null),
+  ...Array.from({ length: month.value.days }, (_, index) => index + 1),
+])
+
+const when = computed(() => `${month.value.label}${selected.value}日 周${week[(month.value.lead + selected.value - 1) % 7]}`)
+
+function matches(event, day) {
+  if (!day || event.day !== day || event.month !== month.value.month) return false
+  return event.yearly || event.year === month.value.year
+}
+
+function marked(day) {
+  return (phone.story.calendar?.events || []).some((event) => matches(event, day))
+}
+
+const dayEvents = computed(() =>
+  (phone.story.calendar?.events || []).filter((event) => matches(event, selected.value)),
+)
+
+function shift(delta) {
+  const next = new Date(cursor.value.getFullYear(), cursor.value.getMonth() + delta, 1)
+  cursor.value = next
+  const days = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate()
+  if (selected.value > days) selected.value = days
+}
+
+function goToday() {
+  cursor.value = new Date(now.getFullYear(), now.getMonth(), 1)
+  selected.value = now.getDate()
+}
 </script>
 
 <template>
   <section class="cal">
     <header class="top">
       <button type="button" class="inbox" tabindex="-1">收件箱</button>
-      <b>{{ data?.year }}年</b>
+      <b>{{ month.year }}年</b>
       <button type="button" class="plus" tabindex="-1" aria-label="添加">＋</button>
     </header>
 
     <div class="month">
-      <h2>{{ data?.label }}</h2>
+      <div class="month-head">
+        <h2>{{ month.label }}</h2>
+        <span>
+          <button type="button" aria-label="上个月" @click="shift(-1)">‹</button>
+          <button type="button" aria-label="下个月" @click="shift(1)">›</button>
+        </span>
+      </div>
       <div class="grid">
         <span v-for="name in week" :key="name" class="w">{{ name }}</span>
         <button
@@ -36,28 +81,26 @@ const when = computed(() => `${data?.label || ''}${selected.value}日 周${week[
           :disabled="!day"
           @click="day && (selected = day)"
         >
-          <b :class="{ on: day === selected, today: day === data?.today && day !== selected }">{{ day || '' }}</b>
-          <span class="marks">
-            <i v-if="day && data?.events?.some((item) => item.day === day)" />
-          </span>
+          <b :class="{ on: day === selected, today: day === month.today && day !== selected }">{{ day || '' }}</b>
+          <i v-if="marked(day)" class="dot" />
         </button>
       </div>
     </div>
 
     <div class="list">
       <p class="when">{{ when }}</p>
-      <div v-for="item in events" :key="item.title" class="event">
-        <i :style="{ background: item.color }" />
-        <span class="copy">
-          <b>{{ item.title }}</b>
-          <small>{{ item.time }}</small>
+      <article v-for="event in dayEvents" :key="event.id" class="event">
+        <i />
+        <span>
+          <b>{{ event.title }}</b>
+          <small>全天</small>
         </span>
-      </div>
-      <p v-if="!events.length" class="none">无日程</p>
+      </article>
+      <p v-if="!dayEvents.length" class="none">无日程</p>
     </div>
 
     <nav class="dock">
-      <button type="button" class="on" tabindex="-1">今天</button>
+      <button type="button" class="on" @click="goToday">今天</button>
       <button type="button" tabindex="-1">日历</button>
       <button type="button" tabindex="-1">收件箱</button>
     </nav>
@@ -109,8 +152,25 @@ const when = computed(() => `${data?.label || ''}${selected.value}日 周${week[
   padding: 0 8px 4px;
 }
 
-h2 {
+.month-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin: 0 10px 6px;
+}
+
+.month-head h2 {
+  margin: 0;
+}
+
+.month-head button {
+  width: 28px;
+  color: #ff3b30;
+  font-size: 28px;
+  line-height: 1;
+}
+
+h2 {
   color: #ff3b30;
   font-size: 34px;
   font-weight: 700;
@@ -161,21 +221,43 @@ h2 {
   font-weight: 600;
 }
 
-.marks {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 3px;
-  height: 8px;
-  margin-top: 2px;
-}
-
-.marks i {
-  display: block;
+.dot {
   width: 5px;
   height: 5px;
+  margin-top: 2px;
   border-radius: 50%;
   background: #ff3b30;
+}
+
+.event {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.event i {
+  width: 4px;
+  border-radius: 2px;
+  background: #ff3b30;
+}
+
+.event b,
+.event small {
+  display: block;
+}
+
+.event b {
+  font-size: 16px;
+  font-weight: 560;
+}
+
+.event small {
+  margin-top: 2px;
+  color: #8e8e93;
+  font-size: 13px;
 }
 
 .list {
@@ -193,42 +275,6 @@ h2 {
   color: rgba(60, 60, 67, 0.6);
   font-size: 13px;
   font-weight: 600;
-}
-
-.event {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
-  padding: 12px 12px 12px 0;
-  border-radius: 12px;
-  background: #fff;
-  overflow: hidden;
-}
-
-.event i {
-  width: 4px;
-  margin: -12px 0;
-  border-radius: 0;
-}
-
-.copy {
-  min-width: 0;
-}
-
-.event b,
-.event small {
-  display: block;
-}
-
-.event b {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.event small {
-  margin-top: 3px;
-  color: rgba(60, 60, 67, 0.6);
-  font-size: 14px;
 }
 
 .dock {

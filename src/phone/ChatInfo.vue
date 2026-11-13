@@ -25,10 +25,10 @@ const contact = computed(() => phone.contactOf(thread.value?.contact))
 
     <div class="body">
       <div class="card people">
-        <div class="person">
+        <button type="button" class="person" @click="phone.openContact(thread.contact)">
           <Avatar :contact="contact" :size="52" />
           <small>{{ contact.name }}</small>
-        </div>
+        </button>
         <div class="person add" aria-hidden="true">
           <i>+</i>
           <small>添加</small>
@@ -120,6 +120,7 @@ header svg,
 .person {
   width: 56px;
   text-align: center;
+  color: inherit;
 }
 
 .person :deep(.avatar) {

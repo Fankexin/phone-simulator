@@ -14,6 +14,8 @@ import momentsIcon from '../images/wechat/moments.svg'
 import channelsIcon from '../images/wechat/channels.svg'
 import favoritesIcon from '../images/wechat/favorites.svg'
 import settingsIcon from '../images/wechat/settings.svg'
+import newFriendIcon from '../images/wechat/新朋友.svg'
+import groupIcon from '../images/wechat/群聊.svg'
 
 const props = defineProps({
   app: { type: String, required: true },
@@ -27,10 +29,8 @@ const heading = computed(() => (unread.value ? `微信(${unread.value})` : '微�
 const contacts = computed(() => phone.threadsFor('wechat'))
 
 const contactShortcuts = [
-  { id: 'new', name: '新的朋友', tone: 'new' },
-  { id: 'group', name: '群聊', tone: 'group' },
-  { id: 'tag', name: '标签', tone: 'tag' },
-  { id: 'oa', name: '公众号', tone: 'oa' },
+  { id: 'new', name: '新的朋友', icon: newFriendIcon },
+  { id: 'group', name: '群聊', icon: groupIcon },
 ]
 
 const discover = [
@@ -54,6 +54,11 @@ function letterOf(name) {
   const ch = (name || '#').trim().charAt(0)
   return /[A-Za-z]/.test(ch) ? ch.toUpperCase() : ch
 }
+
+function listTime(time) {
+  const match = String(time || '').match(/^(\d{4})年(\d{1,2})月(\d{1,2})日/)
+  return match ? `${match[1]}/${match[2]}/${match[3]}` : time || ''
+}
 </script>
 
 <template>
@@ -61,9 +66,7 @@ function letterOf(name) {
     <header class="sms-top">
       <button type="button" class="edit" tabindex="-1">编辑</button>
       <h1>信息</h1>
-      <button type="button" class="compose" tabindex="-1" aria-label="编写">
-        <svg viewBox="0 0 24 24"><path d="M4 18.5V6.8A1.8 1.8 0 0 1 5.8 5h8.4A1.8 1.8 0 0 1 16 6.8v7.4a1.8 1.8 0 0 1-1.8 1.8H8l-4 2.5z" /><path d="M14.5 4.5 19 9l-7.5 7.5H7v-4.5z" /></svg>
-      </button>
+      <span />
     </header>
     <label class="sms-search">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>
@@ -82,7 +85,7 @@ function letterOf(name) {
         <span class="copy">
           <span class="top">
             <b>{{ thread.contact.name }}</b>
-            <time>{{ thread.last?.time }}</time>
+            <time>{{ listTime(thread.last?.time) }}</time>
           </span>
           <span class="preview">{{ thread.last?.text }}</span>
         </span>
@@ -120,10 +123,7 @@ function letterOf(name) {
         </span>
         <span class="meta">
           <span class="r1">
-            <b>
-              <em v-if="thread.pinned" class="pin" aria-hidden="true" />
-              {{ thread.contact.name }}
-            </b>
+            <b>{{ thread.contact.name }}</b>
             <time>{{ thread.last?.time }}</time>
           </span>
           <p>{{ thread.last?.text }}</p>
@@ -133,14 +133,21 @@ function letterOf(name) {
 
     <div v-else-if="wechatTab === 'contacts'" class="list contacts">
       <div class="shortcuts">
-        <div v-for="item in contactShortcuts" :key="item.id" class="wxr mute">
-          <span class="sc" :data-tone="item.tone" aria-hidden="true" />
+        <button
+          v-for="item in contactShortcuts"
+          :key="item.id"
+          type="button"
+          class="wxr"
+          :class="{ mute: item.id !== 'new' }"
+          @click="item.id === 'new' && phone.openNewFriends()"
+        >
+          <img class="sc-icon" :src="item.icon" alt="" />
           <span class="meta name-only"><b>{{ item.name }}</b></span>
-        </div>
+        </button>
       </div>
       <template v-for="thread in contacts" :key="thread.id">
         <p class="letter">{{ letterOf(thread.contact.name) }}</p>
-        <button type="button" class="wxr" @click="phone.openThread(thread.id)">
+        <button type="button" class="wxr" @click="phone.openContact(thread.contactId)">
           <span class="av"><Avatar :contact="thread.contact" :size="40" /></span>
           <span class="meta name-only"><b>{{ thread.contact.name }}</b></span>
         </button>
@@ -159,18 +166,18 @@ function letterOf(name) {
     </div>
 
     <div v-else class="groups me">
-      <div class="profile">
+      <button type="button" class="profile" @click="phone.openContact('me')">
         <Avatar :contact="phone.contactOf('me')" :size="64" />
         <span class="who">
           <b>{{ phone.story.meta.owner }}</b>
-          <small>微信号：{{ phone.story.meta.owner }}</small>
+          <small>微信号：{{ phone.contactOf('me').wxid || phone.story.meta.owner }}</small>
           <em>状态 · 点击添加</em>
         </span>
         <svg class="qr" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 4h7v7H4zm2 2v3h3V6zm7-2h7v7h-7zm2 2v3h3V6zM4 13h7v7H4zm2 2v3h3v-3zm9 0h2v2h-2zm-2-2h2v2h-2zm4 0h3v3h-2v2h-2v-3h1zm-2 4h2v3h-2zm4 0h3v3h-3z" />
         </svg>
         <svg class="chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" /></svg>
-      </div>
+      </button>
       <div v-for="(group, index) in mine" :key="index" class="group">
         <button v-for="item in group" :key="item.id" type="button" class="grow" @click="openRow(item.id)">
           <img class="tic" :class="item.id" :src="item.icon" alt="" />
@@ -358,17 +365,6 @@ function letterOf(name) {
   white-space: nowrap;
 }
 
-.pin {
-  width: 10px;
-  height: 10px;
-  flex: none;
-  border-radius: 1px;
-  background:
-    linear-gradient(#b2b2b2, #b2b2b2) 4px 1px / 2px 7px no-repeat,
-    linear-gradient(#b2b2b2, #b2b2b2) 2px 2px / 6px 3px no-repeat;
-  transform: rotate(35deg);
-}
-
 .meta time {
   flex: none;
   color: #b2b2b2;
@@ -394,42 +390,13 @@ function letterOf(name) {
   height: 56px;
 }
 
-.sc {
+.sc-icon {
   width: 40px;
   height: 40px;
   flex: none;
-  border-radius: 6px;
-  background:
-    radial-gradient(circle at 50% 38%, #fff 0 18%, transparent 19%),
-    linear-gradient(180deg, #fff 48%, transparent 48%),
-    currentColor;
-  color: #fa9d3b;
-}
-
-.sc[data-tone='group'] {
-  color: #10aeff;
-  background:
-    radial-gradient(circle at 35% 40%, #fff 0 12%, transparent 13%),
-    radial-gradient(circle at 65% 40%, #fff 0 12%, transparent 13%),
-    radial-gradient(circle at 50% 62%, #fff 0 14%, transparent 15%),
-    currentColor;
-}
-
-.sc[data-tone='tag'] {
-  color: #1485ee;
-  background:
-    linear-gradient(#fff, #fff) 10px 12px / 20px 3px no-repeat,
-    linear-gradient(#fff, #fff) 10px 19px / 14px 3px no-repeat,
-    linear-gradient(#fff, #fff) 10px 26px / 17px 3px no-repeat,
-    currentColor;
-}
-
-.sc[data-tone='oa'] {
-  color: #2aae67;
-  background:
-    radial-gradient(circle at 50% 42%, #fff 0 11%, transparent 12%),
-    linear-gradient(#fff, #fff) 18px 22px / 4px 10px no-repeat,
-    currentColor;
+  display: block;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .letter {
@@ -507,10 +474,13 @@ function letterOf(name) {
   display: flex;
   align-items: center;
   gap: 14px;
+  width: 100%;
   margin-bottom: 8px;
   padding: 22px 16px 24px;
   background: #fff;
   border-bottom: 0.5px solid #e5e5e5;
+  text-align: left;
+  color: inherit;
 }
 
 .profile :deep(.avatar) {
@@ -617,30 +587,10 @@ function letterOf(name) {
   font-weight: 650;
 }
 
-.edit,
-.compose {
+.edit {
   color: #007aff;
   font-size: 17px;
-}
-
-.edit {
   justify-self: start;
-}
-
-.compose {
-  justify-self: end;
-  display: grid;
-  place-items: center;
-}
-
-.compose svg {
-  width: 24px;
-  height: 24px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 .sms-search {

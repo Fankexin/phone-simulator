@@ -9,9 +9,10 @@ defineProps({
     class="art"
     role="img"
     :aria-label="photo.title"
-    :style="{ background: `linear-gradient(155deg, ${photo.colors[0]}, ${photo.colors[1]})` }"
+    :style="photo.src ? undefined : { background: `linear-gradient(155deg, ${photo.colors[0]}, ${photo.colors[1]})` }"
   >
-    <span class="motif" :class="photo.motif" />
+    <img v-if="photo.src" :src="photo.src" alt="" referrerpolicy="no-referrer" />
+    <span v-else class="motif" :class="photo.motif" />
   </div>
 </template>
 
@@ -21,6 +22,13 @@ defineProps({
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+.art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .motif {

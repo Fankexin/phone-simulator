@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { usePhone } from './usePhone.js'
 import photos from '../images/photos.svg'
 import notes from '../images/notes.svg'
 import weather from '../images/weather.svg'
@@ -17,12 +16,8 @@ const files = { photos, notes, weather, sms, calls, wechat }
 const file = computed(() => files[props.name] || '')
 const weekNames = ['日', '一', '二', '三', '四', '五', '六']
 const calendarIcon = computed(() => {
-  const calendar = usePhone().story.calendar
-  const month = Number(String(calendar?.label || '').match(/\d+/)?.[0])
-  const today = Number(calendar?.today)
-  const date = new Date(calendar?.year, month - 1, today)
-  if (!month || !today || Number.isNaN(date.getTime())) return { weekday: '', day: '' }
-  return { weekday: `周${weekNames[date.getDay()]}`, day: String(today) }
+  const date = new Date()
+  return { weekday: `周${weekNames[date.getDay()]}`, day: String(date.getDate()) }
 })
 const now = ref(Date.now())
 let frame = 0
