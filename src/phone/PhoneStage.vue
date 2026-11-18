@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { usePhone } from './usePhone.js'
 import StatusBar from './StatusBar.vue'
 import LockScreen from './LockScreen.vue'
@@ -37,11 +37,28 @@ const screenKey = computed(() => {
     .filter(Boolean)
     .join(':')
 })
+
+/** 真机/触控：去掉模拟外框（含 Safari「桌面网站」把宽度撑大的情况） */
+const flat = ref(false)
+let shellQuery
+function syncShell() {
+  flat.value = Boolean(shellQuery?.matches)
+  document.documentElement.classList.toggle('shell-flat', flat.value)
+}
+onMounted(() => {
+  shellQuery = window.matchMedia('(max-width: 900px), (hover: none) and (pointer: coarse)')
+  syncShell()
+  shellQuery.addEventListener('change', syncShell)
+})
+onUnmounted(() => {
+  shellQuery?.removeEventListener('change', syncShell)
+  document.documentElement.classList.remove('shell-flat')
+})
 </script>
 
 <template>
-  <main class="stage">
-    <div class="device" :class="{ off: phone.progress.phase === 'off' }">
+  <main class="stage" :class="{ flat }">
+    <div class="device" :class="{ flat, off: phone.progress.phase === 'off' }">
       <i class="side silent" aria-hidden="true" />
       <i class="side vol-up" aria-hidden="true" />
       <i class="side vol-down" aria-hidden="true" />
@@ -243,14 +260,48 @@ button.grip {
   75% { transform: translateX(1px) rotate(0.2deg); }
 }
 
-@media (max-width: 520px) {
+.stage.flat {
+  min-height: 100%;
+  height: 100svh;
+  padding: 0;
+  background: #000;
+}
+
+.device.flat {
+  width: 100%;
+  height: 100%;
+  max-height: 100svh;
+  padding: 0;
+  border-radius: 0;
+  background: #000;
+  box-shadow: none;
+}
+
+.device.flat .side {
+  display: none;
+}
+
+.device.flat .screen,
+.device.flat .screen::after {
+  border-radius: 0;
+}
+
+.device.flat .screen::after {
+  display: none;
+}
+
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
   .stage {
+    min-height: 100%;
+    height: 100svh;
     padding: 0;
+    background: #000;
   }
 
   .device {
     width: 100%;
-    height: 100svh;
+    height: 100%;
+    max-height: 100svh;
     padding: 0;
     border-radius: 0;
     background: #000;
@@ -264,6 +315,10 @@ button.grip {
   .screen,
   .screen::after {
     border-radius: 0;
+  }
+
+  .screen::after {
+    display: none;
   }
 }
 

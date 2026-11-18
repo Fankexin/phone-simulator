@@ -19,6 +19,7 @@ function blankProgress() {
     read: {},
     unlocked: {},
     momentsStale: false,
+    momentReplies: {},
   }
 }
 
@@ -39,6 +40,34 @@ function createPhone() {
 
   function momentsOf(contactId) {
     return visibleMoments.value.filter((item) => item.contact === contactId)
+  }
+
+  function momentComments(moment) {
+    const patch = progress.momentReplies[moment.id]
+    return (moment.comments || []).map((item) => {
+      const text = item.id && patch?.replacements?.[item.id]
+      return text ? { ...item, text } : item
+    })
+  }
+
+  function canReplyMoment(momentId, comment) {
+    if (!comment?.id || !comment.reply) return false
+    return !progress.momentReplies[momentId]?.done?.[comment.id]
+  }
+
+  function sendMomentReply(momentId, commentId) {
+    const moment = story.moments.find((item) => item.id === momentId)
+    const comment = moment?.comments?.find((item) => item.id === commentId)
+    if (!comment?.reply || !canReplyMoment(momentId, comment)) return false
+    const prev = progress.momentReplies[momentId] || { done: {}, replacements: {} }
+    progress.momentReplies[momentId] = {
+      done: { ...prev.done, [commentId]: true },
+      replacements: {
+        ...prev.replacements,
+        [comment.reply.replaceId]: comment.reply.text,
+      },
+    }
+    return true
   }
   const notices = computed(() =>
     story.threads
@@ -250,6 +279,7 @@ function createPhone() {
       Object.assign(progress.read, data.read || {})
       Object.assign(progress.unlocked, data.unlocked || {})
       progress.momentsStale = Boolean(data.momentsStale)
+      progress.momentReplies = data.momentReplies && typeof data.momentReplies === 'object' ? data.momentReplies : {}
       progress.phase = 'lock'
       progress.stack = []
     } catch {
@@ -266,6 +296,7 @@ function createPhone() {
         read: progress.read,
         unlocked: progress.unlocked,
         momentsStale: progress.momentsStale,
+        momentReplies: progress.momentReplies,
       }),
     )
   }
@@ -283,6 +314,9 @@ function createPhone() {
     wechatTab,
     contactOf,
     momentsOf,
+    momentComments,
+    canReplyMoment,
+    sendMomentReply,
     projection,
     threadsFor,
     wechatFriends,

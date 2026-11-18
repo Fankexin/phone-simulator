@@ -51,10 +51,28 @@ body {
   background: #101216;
 }
 
-@media (max-width: 520px) {
-  body {
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  html,
+  body,
+  #app {
+    height: 100%;
     overflow: hidden;
   }
+
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+html.shell-flat,
+html.shell-flat body,
+html.shell-flat #app {
+  height: 100%;
+  overflow: hidden;
+}
+
+html.shell-flat body {
+  overscroll-behavior: none;
 }
 
 .rise-enter-active,

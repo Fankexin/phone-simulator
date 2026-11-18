@@ -262,7 +262,10 @@ onBeforeUnmount(() => window.clearTimeout(glideTimer))
         </span>
       </header>
       <div class="scroller" @scroll="onLibraryScroll">
-        <h2>{{ pane === 'library' ? '图库' : '相簿' }}</h2>
+        <div class="hero">
+          <h2>{{ pane === 'library' ? '图库' : '相簿' }}</h2>
+          <button v-if="pane === 'library'" type="button" class="select" tabindex="-1">选择</button>
+        </div>
 
         <div v-if="pane === 'library'" class="grid library">
           <button v-for="item in library" :key="item.id" type="button" @click="phone.openPhoto(item.id)">
@@ -342,6 +345,16 @@ onBeforeUnmount(() => window.clearTimeout(glideTimer))
   border-bottom: 0.5px solid transparent;
 }
 
+.home .nav:not(.stuck) {
+  height: calc(var(--safe-top) + var(--call-gap, 0px));
+  padding-bottom: 0;
+}
+
+.home .nav:not(.stuck) .side,
+.home .nav:not(.stuck) .select {
+  display: none;
+}
+
 .nav.stuck {
   border-bottom-color: rgba(60, 60, 67, 0.29);
   backdrop-filter: blur(18px) saturate(1.4);
@@ -360,7 +373,7 @@ onBeforeUnmount(() => window.clearTimeout(glideTimer))
 }
 
 .nav b {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-size: 17px;
   font-weight: 600;
   letter-spacing: -0.3px;
@@ -401,6 +414,35 @@ onBeforeUnmount(() => window.clearTimeout(glideTimer))
 
 .home .scroller {
   padding-bottom: calc(62px + var(--safe-bottom));
+}
+
+.hero {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 16px 0;
+}
+
+.hero h2 {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1.15;
+}
+
+.hero .select {
+  flex: none;
+  min-height: 0;
+  padding: 0 0 2px;
+  line-height: 1.15;
+}
+
+.home .nav.stuck ~ .scroller .hero .select {
+  visibility: hidden;
 }
 
 .scroller h2 {

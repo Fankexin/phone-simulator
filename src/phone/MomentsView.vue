@@ -11,6 +11,7 @@ const phone = usePhone()
 const { pop } = phone
 const solid = ref(false)
 const frames = ref({})
+const reply = ref(null)
 
 const ownerId = computed(() => props.contactId || 'me')
 const owner = computed(() => phone.contactOf(ownerId.value))
@@ -18,6 +19,32 @@ const posts = computed(() =>
   props.contactId ? phone.momentsOf(props.contactId) : phone.visibleMoments.value,
 )
 const showCam = computed(() => !props.contactId)
+const replyTarget = computed(() => (reply.value ? phone.contactOf(reply.value.to || reply.value.from) : null))
+
+function commentsOf(post) {
+  return phone.momentComments(post)
+}
+
+function openReply(post, item) {
+  if (!phone.canReplyMoment(post.id, item)) return
+  reply.value = {
+    momentId: post.id,
+    commentId: item.id,
+    from: item.from,
+    to: item.to,
+    text: item.reply.text,
+  }
+}
+
+function closeReply() {
+  reply.value = null
+}
+
+function sendReply() {
+  if (!reply.value) return
+  phone.sendMomentReply(reply.value.momentId, reply.value.commentId)
+  reply.value = null
+}
 
 function onScroll(event) {
   solid.value = event.target.scrollTop > 120
@@ -116,7 +143,7 @@ function onPhoto(event, id) {
               <svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="1.6" /><circle cx="16" cy="12" r="1.6" /></svg>
             </span>
           </div>
-          <div v-if="post.likes?.length || post.comments?.length" class="react">
+          <div v-if="post.likes?.length || commentsOf(post).length" class="react">
             <p v-if="post.likes?.length" class="likes">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 19.2s-6.4-3.9-6.4-8a3.6 3.6 0 0 1 6.4-2.2 3.6 3.6 0 0 1 6.4 2.2c0 4.1-6.4 8-6.4 8z" />
@@ -127,8 +154,13 @@ function onPhoto(event, id) {
                 </template>
               </span>
             </p>
-            <ul v-if="post.comments?.length" class="comments" :class="{ split: post.likes?.length }">
-              <li v-for="(item, index) in post.comments" :key="index">
+            <ul v-if="commentsOf(post).length" class="comments" :class="{ split: post.likes?.length }">
+              <li
+                v-for="(item, index) in commentsOf(post)"
+                :key="item.id || index"
+                :class="{ tap: phone.canReplyMoment(post.id, item) }"
+                @click="openReply(post, item)"
+              >
                 <b>{{ phone.contactOf(item.from).name }}</b><template v-if="item.to"><em>回复</em><b>{{ phone.contactOf(item.to).name }}</b></template>：{{ item.text }}
               </li>
             </ul>
@@ -136,6 +168,17 @@ function onPhoto(event, id) {
         </div>
       </article>
       <p v-if="!posts.length" class="empty">还没有朋友圈</p>
+    </div>
+
+    <div v-if="reply" class="sheet" @click.self="closeReply">
+      <div class="panel" role="dialog" aria-label="回复评论">
+        <div class="sheet-bar">
+          <button type="button" @click="closeReply">取消</button>
+          <b>回复{{ replyTarget?.name || '' }}</b>
+          <button type="button" class="send" @click="sendReply">发送</button>
+        </div>
+        <p class="draft">{{ reply.text }}</p>
+      </div>
     </div>
   </section>
 </template>
@@ -439,6 +482,14 @@ article .likes {
   word-break: break-word;
 }
 
+.comments li.tap {
+  cursor: pointer;
+}
+
+.comments li.tap:active {
+  background: rgba(0, 0, 0, 0.04);
+}
+
 .comments b {
   display: inline;
   color: #576b95;
@@ -456,5 +507,59 @@ article .likes {
   display: block;
   margin-top: 24px;
   text-align: center;
+}
+
+.sheet {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.panel {
+  width: 100%;
+  padding: 0 0 calc(var(--safe-bottom) + 12px);
+  border-radius: 12px 12px 0 0;
+  background: #ededed;
+}
+
+.sheet-bar {
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  align-items: center;
+  height: 48px;
+  padding: 0 8px;
+  color: #111;
+}
+
+.sheet-bar b {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.sheet-bar button {
+  color: #576b95;
+  font-size: 16px;
+}
+
+.sheet-bar .send {
+  justify-self: end;
+  color: #07c160;
+  font-weight: 600;
+}
+
+.draft {
+  margin: 0 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font-size: 16px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
