@@ -7,4 +7,6 @@ export const appCatalog = {
   calendar: { name: '日历' },
   clock: { name: '时钟' },
   weather: { name: '天气' },
+  health: { name: '健康' },
+  taobao: { name: '淘宝' },
 }

@@ -84,3 +84,10 @@ body {
     transition: none;
   }
 }
+
+/* 临时隐藏 Netlify Free 角标；后台能关掉后可删 */
+#nl-badge-frame {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

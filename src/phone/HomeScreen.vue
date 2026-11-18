@@ -105,6 +105,7 @@ function apps(ids) {
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  row-gap: 18px;
   justify-items: center;
 }
 
@@ -188,7 +189,9 @@ function apps(ids) {
 .glyph.clock :deep(img),
 .glyph.clock :deep(svg),
 .glyph.weather :deep(img),
-.glyph.wechat :deep(img) {
+.glyph.wechat :deep(img),
+.glyph.health :deep(img),
+.glyph.taobao :deep(img) {
   width: 58px;
   height: 58px;
 }

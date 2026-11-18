@@ -11,6 +11,8 @@ import CallsApp from './CallsApp.vue'
 import CalendarApp from './CalendarApp.vue'
 import ClockApp from './ClockApp.vue'
 import WeatherApp from './WeatherApp.vue'
+import HealthApp from './HealthApp.vue'
+import TaobaoApp from './TaobaoApp.vue'
 const phone = usePhone()
 const { darkChrome, route } = phone
 const views = {
@@ -22,6 +24,8 @@ const views = {
   calendar: CalendarApp,
   clock: ClockApp,
   weather: WeatherApp,
+  health: HealthApp,
+  taobao: TaobaoApp,
 }
 
 const appView = computed(() => views[phone.route.value?.app] || null)
@@ -29,7 +33,7 @@ const screenKey = computed(() => {
   const route = phone.route.value
   if (phone.progress.phase !== 'home') return phone.progress.phase
   if (!route) return 'home'
-  return [route.app, route.view, route.thread, route.day, route.note, route.contact]
+  return [route.app, route.view, route.thread, route.day, route.note, route.contact, route.favorite, route.channel]
     .filter(Boolean)
     .join(':')
 })

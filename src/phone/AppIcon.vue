@@ -7,12 +7,14 @@ import sms from '../images/sms.svg'
 import calls from '../images/calls.svg'
 import wechat from '../images/wechat.svg'
 import clockFace from '../images/clock.svg'
+import health from '../images/health.svg'
+import taobao from '../images/taobao.svg'
 
 const props = defineProps({
   name: { type: String, required: true },
 })
 
-const files = { photos, notes, weather, sms, calls, wechat }
+const files = { photos, notes, weather, sms, calls, wechat, health, taobao }
 const file = computed(() => files[props.name] || '')
 const weekNames = ['日', '一', '二', '三', '四', '五', '六']
 const calendarIcon = computed(() => {

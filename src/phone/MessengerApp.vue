@@ -8,6 +8,8 @@ import ChatFind from './ChatFind.vue'
 import MomentsView from './MomentsView.vue'
 import NewFriends from './NewFriends.vue'
 import ContactProfile from './ContactProfile.vue'
+import FavoritesView from './FavoritesView.vue'
+import ChannelsView from './ChannelsView.vue'
 
 const { route } = usePhone()
 const app = computed(() => route.value?.app || 'wechat')
@@ -20,6 +22,8 @@ const view = computed(() => route.value?.view || '')
   <MomentsView v-if="view === 'moments'" :contact-id="route?.contact || ''" />
   <ContactProfile v-else-if="view === 'contact' && route?.contact" :contact-id="route.contact" />
   <NewFriends v-else-if="view === 'new-friends'" />
+  <FavoritesView v-else-if="view === 'favorites'" />
+  <ChannelsView v-else-if="view === 'channels'" />
   <ChatInfo v-else-if="view === 'chat-info' && route?.thread" :thread-id="route.thread" />
   <ChatFind
     v-else-if="view === 'find-chat' && route?.thread"

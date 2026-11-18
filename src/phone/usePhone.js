@@ -168,6 +168,20 @@ function createPhone() {
     progress.stack = [...progress.stack, { app: 'wechat', view: 'new-friends' }]
   }
 
+  function openFavorites() {
+    progress.stack = [...progress.stack, { app: 'wechat', view: 'favorites' }]
+  }
+
+  function openFavorite(favoriteId) {
+    const item = (story.favorites || []).find((entry) => entry.id === favoriteId)
+    if (!item) return
+    progress.stack = [...progress.stack, { app: 'wechat', view: 'favorites', favorite: favoriteId }]
+  }
+
+  function openChannels() {
+    progress.stack = [...progress.stack, { app: 'wechat', view: 'channels' }]
+  }
+
   function openChatInfo(threadId) {
     const thread = story.threads.find((item) => item.id === threadId)
     if (!thread || thread.app !== 'wechat') return
@@ -282,6 +296,9 @@ function createPhone() {
     openContact,
     openMoments,
     openNewFriends,
+    openFavorites,
+    openFavorite,
+    openChannels,
     openChatInfo,
     openFindChat,
     openFindDate,

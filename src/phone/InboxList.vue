@@ -63,6 +63,8 @@ const mine = [
 
 function openRow(id) {
   if (id === 'moments') phone.openMoments()
+  if (id === 'fav') phone.openFavorites()
+  if (id === 'video') phone.openChannels()
 }
 
 function letterOf(contact) {
