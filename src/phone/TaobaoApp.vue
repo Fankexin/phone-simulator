@@ -138,10 +138,13 @@ function toTop() {
         </div>
 
         <div class="goods">
-          <div class="thumb" :data-tag="order.tag" aria-hidden="true" />
+          <div class="thumb" :data-tag="order.tag" aria-hidden="true">
+            <img v-if="order.image" :src="order.image" alt="" />
+          </div>
           <div class="info">
             <p class="title">{{ order.title }}</p>
             <p v-if="order.variant" class="variant">{{ order.variant }}</p>
+            <p v-if="order.remark" class="remark">备注：{{ order.remark }}</p>
             <p v-if="order.services?.length" class="services">{{ order.services.join(' · ') }}</p>
           </div>
           <div class="price">
@@ -451,7 +454,15 @@ function toTop() {
   width: 78px;
   height: 78px;
   border-radius: 8px;
+  overflow: hidden;
   background: linear-gradient(145deg, #ffe8d6, #ffd0a8);
+}
+
+.thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .thumb[data-tag='boxing'] {
@@ -501,6 +512,12 @@ function toTop() {
 .variant {
   margin-top: 6px;
   color: #999;
+  font-size: 12px;
+}
+
+.remark {
+  margin-top: 4px;
+  color: #666;
   font-size: 12px;
 }
 

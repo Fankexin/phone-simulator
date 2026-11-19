@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { usePhone } from './usePhone.js'
 import StatusBar from './StatusBar.vue'
 import LockScreen from './LockScreen.vue'
@@ -13,6 +13,8 @@ import ClockApp from './ClockApp.vue'
 import WeatherApp from './WeatherApp.vue'
 import HealthApp from './HealthApp.vue'
 import TaobaoApp from './TaobaoApp.vue'
+
+const gripTipKey = 'found-phone:home-grip-tip'
 const phone = usePhone()
 const { darkChrome, route } = phone
 const views = {
@@ -30,13 +32,46 @@ const views = {
 
 const appView = computed(() => views[phone.route.value?.app] || null)
 const screenKey = computed(() => {
-  const route = phone.route.value
+  const current = phone.route.value
   if (phone.progress.phase !== 'home') return phone.progress.phase
-  if (!route) return 'home'
-  return [route.app, route.view, route.thread, route.day, route.note, route.contact, route.favorite, route.channel]
+  if (!current) return 'home'
+  return [current.app, current.view, current.thread, current.day, current.note, current.contact, current.favorite, current.channel]
     .filter(Boolean)
     .join(':')
 })
+
+const showGripTip = ref(false)
+
+function maybeShowGripTip() {
+  if (phone.progress.phase !== 'home' || route.value) {
+    showGripTip.value = false
+    return
+  }
+  try {
+    if (localStorage.getItem(gripTipKey) === '1') {
+      showGripTip.value = false
+      return
+    }
+  } catch {
+    /* ignore */
+  }
+  showGripTip.value = true
+}
+
+function dismissGripTip() {
+  try {
+    localStorage.setItem(gripTipKey, '1')
+  } catch {
+    /* ignore */
+  }
+  showGripTip.value = false
+}
+
+watch(
+  () => [phone.progress.phase, route.value],
+  () => maybeShowGripTip(),
+  { immediate: true },
+)
 
 /** 真机/触控：去掉模拟外框（含 Safari「桌面网站」把宽度撑大的情况） */
 const flat = ref(false)
@@ -83,11 +118,26 @@ onUnmounted(() => {
             v-if="phone.progress.phase === 'home' && route"
             type="button"
             class="grip"
-            :class="{ ink: !darkChrome }"
+            :class="{ ink: !darkChrome, tip: showGripTip }"
             aria-label="主屏幕"
             @click="phone.goHome"
           />
-          <i v-else class="grip" :class="{ ink: !darkChrome }" aria-hidden="true" />
+          <i v-else class="grip" :class="{ ink: !darkChrome, tip: showGripTip }" aria-hidden="true" />
+
+          <div
+            v-if="showGripTip"
+            class="grip-tip"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="grip-tip-title"
+          >
+            <button type="button" class="grip-tip-mask" aria-label="关闭提示" @click="dismissGripTip" />
+            <div class="grip-tip-card">
+              <p id="grip-tip-title">打开应用后，点屏幕最下方的横条，可以回到主屏幕。</p>
+              <button type="button" class="grip-tip-ok" @click="dismissGripTip">知道了</button>
+            </div>
+            <span class="grip-tip-arrow" aria-hidden="true" />
+          </div>
         </template>
       </div>
     </div>
@@ -253,6 +303,74 @@ button.grip {
 
 .grip.ink::before {
   background: rgba(0, 0, 0, 0.28);
+}
+
+.grip.tip::before {
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.28);
+  animation: grip-pulse 1.4s ease-in-out infinite;
+}
+
+.grip-tip {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  pointer-events: none;
+}
+
+.grip-tip-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  pointer-events: auto;
+}
+
+.grip-tip-card {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: calc(var(--safe-bottom) + 28px);
+  padding: 16px 16px 14px;
+  border-radius: 16px;
+  background: rgba(28, 28, 30, 0.94);
+  color: #f5f5f7;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.grip-tip-card p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+.grip-tip-ok {
+  margin-top: 14px;
+  width: 100%;
+  height: 40px;
+  border-radius: 12px;
+  background: #fff;
+  color: #111;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.grip-tip-arrow {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 14px);
+  width: 14px;
+  height: 14px;
+  background: rgba(28, 28, 30, 0.94);
+  transform: translateX(-50%) rotate(45deg);
+  pointer-events: none;
+}
+
+@keyframes grip-pulse {
+  0%,
+  100% { opacity: 1; transform: translateX(-50%) scaleX(1); }
+  50% { opacity: 0.72; transform: translateX(-50%) scaleX(1.06); }
 }
 
 @keyframes buzz {

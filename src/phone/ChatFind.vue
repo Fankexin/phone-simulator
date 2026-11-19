@@ -14,31 +14,51 @@ const { pop } = phone
 const thread = computed(() => phone.story.threads.find((item) => item.id === props.threadId))
 const contact = computed(() => phone.contactOf(thread.value?.contact))
 const me = computed(() => phone.contactOf('me'))
-const onlyDay = '2023-11-23'
-const year = 2023
-const month = 11
-const daysInMonth = 30
-const lead = 3
+const historyDays = computed(() => new Set(Object.keys(thread.value?.history || {})))
+const months = computed(() => {
+  const map = new Map()
+  for (const key of historyDays.value) {
+    const [year, month] = key.split('-').map(Number)
+    const id = `${year}-${month}`
+    if (!map.has(id)) map.set(id, { year, month })
+  }
+  return [...map.values()].sort((a, b) => a.year - b.year || a.month - b.month)
+})
 const title = computed(() => {
   if (props.mode === 'date') return '按日期查找'
   if (props.mode === 'day') return contact.value?.name || '聊天记录'
   return '查找聊天内容'
 })
 const dayMessages = computed(() => phone.historyOf(props.threadId, props.day))
-const cells = computed(() => {
+
+function daysInMonth(year, month) {
+  return new Date(year, month, 0).getDate()
+}
+
+function leadDays(year, month) {
+  return new Date(year, month - 1, 1).getDay()
+}
+
+function cellsFor(year, month) {
+  const lead = leadDays(year, month)
+  const total = daysInMonth(year, month)
   const list = Array.from({ length: lead }, () => null)
-  for (let day = 1; day <= daysInMonth; day += 1) list.push(day)
+  for (let day = 1; day <= total; day += 1) list.push(day)
   while (list.length % 7) list.push(null)
   return list
-})
+}
 
-function dayKey(day) {
+function dayKey(year, month, day) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-function pickDay(day) {
-  const key = dayKey(day)
-  if (key !== onlyDay) return
+function hasDay(year, month, day) {
+  return historyDays.value.has(dayKey(year, month, day))
+}
+
+function pickDay(year, month, day) {
+  const key = dayKey(year, month, day)
+  if (!historyDays.value.has(key)) return
   phone.openFindDay(props.threadId, key)
 }
 
@@ -73,26 +93,33 @@ function showTime(index) {
     </div>
 
     <div v-else-if="mode === 'date'" class="pane cal">
-      <div class="month">
-        <b>{{ year }}年{{ month }}月</b>
-      </div>
-      <div class="week">
-        <span v-for="label in ['日', '一', '二', '三', '四', '五', '六']" :key="label">{{ label }}</span>
-      </div>
-      <div class="grid">
-        <button
-          v-for="(day, index) in cells"
-          :key="index"
-          type="button"
-          class="cell"
-          :class="{ on: day && dayKey(day) === onlyDay, empty: !day, off: day && dayKey(day) !== onlyDay }"
-          :disabled="!day || dayKey(day) !== onlyDay"
-          @click="pickDay(day)"
-        >
-          <template v-if="day">{{ day }}</template>
-        </button>
-      </div>
-      <p class="hint">仅可查看有记录的日期</p>
+      <template v-for="item in months" :key="`${item.year}-${item.month}`">
+        <div class="month">
+          <b>{{ item.year }}年{{ item.month }}月</b>
+        </div>
+        <div class="week">
+          <span v-for="label in ['日', '一', '二', '三', '四', '五', '六']" :key="label">{{ label }}</span>
+        </div>
+        <div class="grid">
+          <button
+            v-for="(day, index) in cellsFor(item.year, item.month)"
+            :key="index"
+            type="button"
+            class="cell"
+            :class="{
+              on: day && hasDay(item.year, item.month, day),
+              empty: !day,
+              off: day && !hasDay(item.year, item.month, day),
+            }"
+            :disabled="!day || !hasDay(item.year, item.month, day)"
+            @click="pickDay(item.year, item.month, day)"
+          >
+            <template v-if="day">{{ day }}</template>
+          </button>
+        </div>
+      </template>
+      <p v-if="!months.length" class="hint">暂无聊天记录</p>
+      <p v-else class="hint">仅可查看有记录的日期</p>
     </div>
 
     <div v-else class="pane day">

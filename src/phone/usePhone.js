@@ -1,9 +1,10 @@
 import { computed, reactive, ref, watch } from 'vue'
-import { story } from '../story/story.js'
+import { story as baseStory } from '../story/story.js'
+import { applyIfBranch, ifBranch } from '../story/ifBranch.js'
 import { appCatalog } from './catalog.js'
 import { meets, projectThread, validateStory } from './engine.js'
 
-const saveKey = `found-phone:${story.meta.id}:${story.meta.revision}`
+const saveKey = `found-phone:${baseStory.meta.id}:${baseStory.meta.revision}`
 
 function messageStamp(time) {
   const match = String(time || '').match(/^(\d{4})年(\d{1,2})月(\d{1,2})日(?:\s+(\d{1,2}):(\d{2}))?/)
@@ -20,11 +21,12 @@ function blankProgress() {
     unlocked: {},
     momentsStale: false,
     momentReplies: {},
+    branch: '',
   }
 }
 
 function createPhone() {
-  const issues = validateStory(story)
+  const issues = validateStory(baseStory)
   if (issues.length && import.meta.env.DEV) {
     console.warn('[捡手机] 剧情数据有问题\n' + issues.join('\n'))
   }
@@ -34,15 +36,20 @@ function createPhone() {
 
   load()
 
+  function liveStory() {
+    return progress.branch === 'if' ? applyIfBranch(baseStory, ifBranch) : baseStory
+  }
+
   const route = computed(() => progress.stack[progress.stack.length - 1] || null)
-  const visibleMoments = computed(() => story.moments.filter((item) => meets(item.requires, {})))
-  const visibleNotes = computed(() => story.notes.filter((item) => meets(item.requires, {})))
+  const visibleMoments = computed(() => liveStory().moments.filter((item) => meets(item.requires, {})))
+  const visibleNotes = computed(() => liveStory().notes.filter((item) => meets(item.requires, {})))
 
   function momentsOf(contactId) {
     return visibleMoments.value.filter((item) => item.contact === contactId)
   }
 
   function momentComments(moment) {
+    if (progress.branch === 'if') return moment.comments || []
     const patch = progress.momentReplies[moment.id]
     return (moment.comments || []).map((item) => {
       const text = item.id && patch?.replacements?.[item.id]
@@ -50,28 +57,38 @@ function createPhone() {
     })
   }
 
-  function canReplyMoment(momentId, comment) {
-    if (!comment?.id || !comment.reply) return false
+  function canEditMoment(momentId, comment) {
+    if (!comment?.id || !comment.edit) return false
+    if (progress.branch === 'if') return true
     return !progress.momentReplies[momentId]?.done?.[comment.id]
   }
 
-  function sendMomentReply(momentId, commentId) {
-    const moment = story.moments.find((item) => item.id === momentId)
+  function sendMomentEdit(momentId, commentId) {
+    const moment = liveStory().moments.find((item) => item.id === momentId)
     const comment = moment?.comments?.find((item) => item.id === commentId)
-    if (!comment?.reply || !canReplyMoment(momentId, comment)) return false
-    const prev = progress.momentReplies[momentId] || { done: {}, replacements: {} }
-    progress.momentReplies[momentId] = {
-      done: { ...prev.done, [commentId]: true },
-      replacements: {
-        ...prev.replacements,
-        [comment.reply.replaceId]: comment.reply.text,
-      },
+    if (!comment?.edit || !canEditMoment(momentId, comment)) return false
+
+    const nextBranch = comment.edit.branch === 'if' ? 'if' : ''
+    if (nextBranch === 'if') {
+      const prev = progress.momentReplies[momentId] || { done: {}, replacements: {} }
+      progress.momentReplies[momentId] = {
+        done: { ...prev.done, [commentId]: true },
+        replacements: {
+          ...prev.replacements,
+          [commentId]: comment.edit.text,
+        },
+      }
+      progress.branch = 'if'
+    } else {
+      progress.branch = ''
+      delete progress.momentReplies[momentId]
     }
     return true
   }
+
   const notices = computed(() =>
-    story.threads
-      .filter((thread) => !progress.read[thread.id] && thread.unread)
+    liveStory()
+      .threads.filter((thread) => !progress.read[thread.id] && thread.unread)
       .map((thread) => {
         const projected = projectThread(thread.script)
         const last = projected.messages[projected.messages.length - 1]
@@ -97,18 +114,18 @@ function createPhone() {
   watch(progress, save, { deep: true })
 
   function contactOf(id) {
-    return story.contacts[id] || { name: '未知', initial: '?', color: '#8e8e93' }
+    return liveStory().contacts[id] || { name: '未知', initial: '?', color: '#8e8e93' }
   }
 
   function projection(threadId) {
-    const thread = story.threads.find((item) => item.id === threadId)
+    const thread = liveStory().threads.find((item) => item.id === threadId)
     if (!thread) return { messages: [], pending: null, draft: '' }
     return { ...projectThread(thread.script), draft: thread.draft || '' }
   }
 
   function threadsFor(appId) {
-    return story.threads
-      .filter((thread) => thread.app === appId)
+    return liveStory()
+      .threads.filter((thread) => thread.app === appId)
       .map((thread) => {
         const projected = projectThread(thread.script)
         const last = projected.messages[projected.messages.length - 1]
@@ -131,8 +148,9 @@ function createPhone() {
   }
 
   function wechatFriends() {
-    return (story.friends || [])
-      .filter((id) => id !== 'me' && story.contacts[id])
+    const current = liveStory()
+    return (current.friends || [])
+      .filter((id) => id !== 'me' && current.contacts[id])
       .map((id) => ({ id, contact: contactOf(id) }))
       .sort((a, b) => {
         const left = String(a.contact.wxid || a.contact.name || '')
@@ -146,7 +164,7 @@ function createPhone() {
   }
 
   function photosIn(albumId) {
-    return story.photos.filter((photo) => photo.album === albumId && meets(photo.requires, {}))
+    return liveStory().photos.filter((photo) => photo.album === albumId && meets(photo.requires, {}))
   }
 
   function pickUp() {
@@ -159,7 +177,7 @@ function createPhone() {
   }
 
   function openFromLock(threadId) {
-    const thread = story.threads.find((item) => item.id === threadId)
+    const thread = liveStory().threads.find((item) => item.id === threadId)
     if (!thread) return
     progress.phase = 'home'
     progress.read[threadId] = true
@@ -173,14 +191,14 @@ function createPhone() {
   }
 
   function openThread(threadId) {
-    const thread = story.threads.find((item) => item.id === threadId)
+    const thread = liveStory().threads.find((item) => item.id === threadId)
     if (!thread) return
     progress.read[threadId] = true
     progress.stack = [...progress.stack, { app: thread.app, thread: threadId }]
   }
 
   function openContact(contactId) {
-    if (!story.contacts[contactId]) return
+    if (!liveStory().contacts[contactId]) return
     const top = progress.stack[progress.stack.length - 1]
     if (top?.view === 'contact' && top.contact === contactId) return
     progress.stack = [...progress.stack, { app: 'wechat', view: 'contact', contact: contactId }]
@@ -189,7 +207,7 @@ function createPhone() {
   function openMoments(contactId) {
     progress.momentsStale = false
     const next = { app: 'wechat', view: 'moments' }
-    if (contactId && story.contacts[contactId]) next.contact = contactId
+    if (contactId && liveStory().contacts[contactId]) next.contact = contactId
     progress.stack = [...progress.stack, next]
   }
 
@@ -202,7 +220,7 @@ function createPhone() {
   }
 
   function openFavorite(favoriteId) {
-    const item = (story.favorites || []).find((entry) => entry.id === favoriteId)
+    const item = (liveStory().favorites || []).find((entry) => entry.id === favoriteId)
     if (!item) return
     progress.stack = [...progress.stack, { app: 'wechat', view: 'favorites', favorite: favoriteId }]
   }
@@ -212,32 +230,32 @@ function createPhone() {
   }
 
   function openChatInfo(threadId) {
-    const thread = story.threads.find((item) => item.id === threadId)
+    const thread = liveStory().threads.find((item) => item.id === threadId)
     if (!thread || thread.app !== 'wechat') return
     progress.stack = [...progress.stack, { app: 'wechat', thread: threadId, view: 'chat-info' }]
   }
 
   function openFindChat(threadId) {
-    const thread = story.threads.find((item) => item.id === threadId)
+    const thread = liveStory().threads.find((item) => item.id === threadId)
     if (!thread || thread.app !== 'wechat') return
     progress.stack = [...progress.stack, { app: 'wechat', thread: threadId, view: 'find-chat' }]
   }
 
   function openFindDate(threadId) {
-    const thread = story.threads.find((item) => item.id === threadId)
+    const thread = liveStory().threads.find((item) => item.id === threadId)
     if (!thread || thread.app !== 'wechat') return
     progress.stack = [...progress.stack, { app: 'wechat', thread: threadId, view: 'find-date' }]
   }
 
   function openFindDay(threadId, day) {
-    const thread = story.threads.find((item) => item.id === threadId)
+    const thread = liveStory().threads.find((item) => item.id === threadId)
     if (!thread || thread.app !== 'wechat') return
     if (!thread.history?.[day]) return
     progress.stack = [...progress.stack, { app: 'wechat', thread: threadId, view: 'find-day', day }]
   }
 
   function historyOf(threadId, day) {
-    const thread = story.threads.find((item) => item.id === threadId)
+    const thread = liveStory().threads.find((item) => item.id === threadId)
     return thread?.history?.[day] || []
   }
 
@@ -264,7 +282,7 @@ function createPhone() {
   }
 
   function tryUnlock(albumId, code) {
-    const secret = story.meta.secrets?.[albumId]
+    const secret = liveStory().meta.secrets?.[albumId]
     if (!secret || code !== secret) return false
     progress.unlocked[albumId] = true
     return true
@@ -280,6 +298,7 @@ function createPhone() {
       Object.assign(progress.unlocked, data.unlocked || {})
       progress.momentsStale = Boolean(data.momentsStale)
       progress.momentReplies = data.momentReplies && typeof data.momentReplies === 'object' ? data.momentReplies : {}
+      progress.branch = data.branch === 'if' ? 'if' : ''
       progress.phase = 'lock'
       progress.stack = []
     } catch {
@@ -297,12 +316,15 @@ function createPhone() {
         unlocked: progress.unlocked,
         momentsStale: progress.momentsStale,
         momentReplies: progress.momentReplies,
+        branch: progress.branch,
       }),
     )
   }
 
   return {
-    story,
+    get story() {
+      return liveStory()
+    },
     progress,
     route,
     ending: computed(() => null),
@@ -315,8 +337,8 @@ function createPhone() {
     contactOf,
     momentsOf,
     momentComments,
-    canReplyMoment,
-    sendMomentReply,
+    canEditMoment,
+    sendMomentEdit,
     projection,
     threadsFor,
     wechatFriends,

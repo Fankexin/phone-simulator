@@ -11,7 +11,7 @@ const phone = usePhone()
 const { pop } = phone
 const solid = ref(false)
 const frames = ref({})
-const reply = ref(null)
+const edit = ref(null)
 
 const ownerId = computed(() => props.contactId || 'me')
 const owner = computed(() => phone.contactOf(ownerId.value))
@@ -19,31 +19,28 @@ const posts = computed(() =>
   props.contactId ? phone.momentsOf(props.contactId) : phone.visibleMoments.value,
 )
 const showCam = computed(() => !props.contactId)
-const replyTarget = computed(() => (reply.value ? phone.contactOf(reply.value.to || reply.value.from) : null))
 
 function commentsOf(post) {
   return phone.momentComments(post)
 }
 
-function openReply(post, item) {
-  if (!phone.canReplyMoment(post.id, item)) return
-  reply.value = {
+function openEdit(post, item) {
+  if (!phone.canEditMoment(post.id, item)) return
+  edit.value = {
     momentId: post.id,
     commentId: item.id,
-    from: item.from,
-    to: item.to,
-    text: item.reply.text,
+    text: item.edit.text,
   }
 }
 
-function closeReply() {
-  reply.value = null
+function closeEdit() {
+  edit.value = null
 }
 
-function sendReply() {
-  if (!reply.value) return
-  phone.sendMomentReply(reply.value.momentId, reply.value.commentId)
-  reply.value = null
+function sendEdit() {
+  if (!edit.value) return
+  phone.sendMomentEdit(edit.value.momentId, edit.value.commentId)
+  edit.value = null
 }
 
 function onScroll(event) {
@@ -158,8 +155,8 @@ function onPhoto(event, id) {
               <li
                 v-for="(item, index) in commentsOf(post)"
                 :key="item.id || index"
-                :class="{ tap: phone.canReplyMoment(post.id, item) }"
-                @click="openReply(post, item)"
+                :class="{ tap: phone.canEditMoment(post.id, item) }"
+                @click="openEdit(post, item)"
               >
                 <b>{{ phone.contactOf(item.from).name }}</b><template v-if="item.to"><em>回复</em><b>{{ phone.contactOf(item.to).name }}</b></template>：{{ item.text }}
               </li>
@@ -170,14 +167,14 @@ function onPhoto(event, id) {
       <p v-if="!posts.length" class="empty">还没有朋友圈</p>
     </div>
 
-    <div v-if="reply" class="sheet" @click.self="closeReply">
-      <div class="panel" role="dialog" aria-label="回复评论">
+    <div v-if="edit" class="sheet" @click.self="closeEdit">
+      <div class="panel" role="dialog" aria-label="修改评论">
         <div class="sheet-bar">
-          <button type="button" @click="closeReply">取消</button>
-          <b>回复{{ replyTarget?.name || '' }}</b>
-          <button type="button" class="send" @click="sendReply">发送</button>
+          <button type="button" @click="closeEdit">取消</button>
+          <b>修改评论</b>
+          <button type="button" class="send" @click="sendEdit">发送</button>
         </div>
-        <p class="draft">{{ reply.text }}</p>
+        <p class="draft">{{ edit.text }}</p>
       </div>
     </div>
   </section>
