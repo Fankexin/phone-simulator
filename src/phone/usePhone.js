@@ -15,7 +15,7 @@ function messageStamp(time) {
 
 function blankProgress() {
   return {
-    phase: 'off',
+    phase: 'lock',
     stack: [],
     read: {},
     unlocked: {},
@@ -165,10 +165,6 @@ function createPhone() {
 
   function photosIn(albumId) {
     return liveStory().photos.filter((photo) => photo.album === albumId && meets(photo.requires, {}))
-  }
-
-  function pickUp() {
-    if (progress.phase === 'off') progress.phase = 'lock'
   }
 
   function unlock() {
@@ -344,7 +340,6 @@ function createPhone() {
     wechatFriends,
     badgeCount,
     photosIn,
-    pickUp,
     unlock,
     openFromLock,
     openApp,

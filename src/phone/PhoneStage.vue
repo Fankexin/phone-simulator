@@ -93,52 +93,45 @@ onUnmounted(() => {
 
 <template>
   <main class="stage" :class="{ flat }">
-    <div class="device" :class="{ flat, off: phone.progress.phase === 'off' }">
+    <div class="device" :class="{ flat }">
       <i class="side silent" aria-hidden="true" />
       <i class="side vol-up" aria-hidden="true" />
       <i class="side vol-down" aria-hidden="true" />
       <i class="side power" aria-hidden="true" />
-      <div class="screen" @click="phone.progress.phase === 'off' && phone.pickUp()">
-        <template v-if="phone.progress.phase === 'off'">
-          <p class="aod">{{ phone.story.meta.clock }}</p>
-          <button type="button" class="wake" @click.stop="phone.pickUp">轻点捡起</button>
-        </template>
+      <div class="screen">
+        <i class="island" aria-hidden="true" />
+        <StatusBar :dark="darkChrome" />
+        <div class="slot">
+          <Transition name="rise">
+            <LockScreen v-if="phone.progress.phase === 'lock'" key="lock" />
+            <HomeScreen v-else-if="!route" key="home" />
+            <component :is="appView" v-else :key="screenKey" />
+          </Transition>
+        </div>
+        <button
+          v-if="phone.progress.phase === 'home' && route"
+          type="button"
+          class="grip"
+          :class="{ ink: !darkChrome, tip: showGripTip }"
+          aria-label="主屏幕"
+          @click="phone.goHome"
+        />
+        <i v-else class="grip" :class="{ ink: !darkChrome, tip: showGripTip }" aria-hidden="true" />
 
-        <template v-else>
-          <i class="island" aria-hidden="true" />
-          <StatusBar :dark="darkChrome" />
-          <div class="slot">
-            <Transition name="rise">
-              <LockScreen v-if="phone.progress.phase === 'lock'" key="lock" />
-              <HomeScreen v-else-if="!route" key="home" />
-              <component :is="appView" v-else :key="screenKey" />
-            </Transition>
+        <div
+          v-if="showGripTip"
+          class="grip-tip"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="grip-tip-title"
+        >
+          <button type="button" class="grip-tip-mask" aria-label="关闭提示" @click="dismissGripTip" />
+          <div class="grip-tip-card">
+            <p id="grip-tip-title">打开应用后，点屏幕最下方的横条，可以回到主屏幕。</p>
+            <button type="button" class="grip-tip-ok" @click="dismissGripTip">知道了</button>
           </div>
-          <button
-            v-if="phone.progress.phase === 'home' && route"
-            type="button"
-            class="grip"
-            :class="{ ink: !darkChrome, tip: showGripTip }"
-            aria-label="主屏幕"
-            @click="phone.goHome"
-          />
-          <i v-else class="grip" :class="{ ink: !darkChrome, tip: showGripTip }" aria-hidden="true" />
-
-          <div
-            v-if="showGripTip"
-            class="grip-tip"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="grip-tip-title"
-          >
-            <button type="button" class="grip-tip-mask" aria-label="关闭提示" @click="dismissGripTip" />
-            <div class="grip-tip-card">
-              <p id="grip-tip-title">打开应用后，点屏幕最下方的横条，可以回到主屏幕。</p>
-              <button type="button" class="grip-tip-ok" @click="dismissGripTip">知道了</button>
-            </div>
-            <span class="grip-tip-arrow" aria-hidden="true" />
-          </div>
-        </template>
+          <span class="grip-tip-arrow" aria-hidden="true" />
+        </div>
       </div>
     </div>
   </main>
@@ -204,7 +197,6 @@ onUnmounted(() => {
   overflow: hidden;
   border-radius: 44px;
   background: #000;
-  cursor: pointer;
   box-shadow: inset 0 0 0 2px #000;
 }
 
@@ -217,31 +209,6 @@ onUnmounted(() => {
   pointer-events: none;
   background: linear-gradient(115deg, rgba(255, 255, 255, 0.14), transparent 26%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
-}
-
-.device:not(.off) .screen {
-  cursor: default;
-}
-
-.aod {
-  margin: 0;
-  padding-top: 22%;
-  color: rgba(255, 255, 255, 0.55);
-  font-family: 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
-  font-size: 86px;
-  font-weight: 220;
-  letter-spacing: -2px;
-  text-align: center;
-}
-
-.wake {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 16%;
-  color: rgba(255, 255, 255, 0.42);
-  font-size: 13px;
-  letter-spacing: 0.08em;
 }
 
 .island {
