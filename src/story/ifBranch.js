@@ -27,7 +27,7 @@ const ifOil = {
   id: 'me-oil',
   contact: 'me',
   at: '2023-10-23T18:40:00',
-  image: img('2.jpg'),
+  image: img('2.webp'),
   likes: ['tao', 'zhou'],
   comments: [
     { from: 'tao', text: '那你以后别用笔了。' },
@@ -199,8 +199,8 @@ export const ifBranch = {
     blurb: '捡到陈晃的手机。微信置顶着陶稚元，最后一条是“车修好了。你坐后面。”',
     passcode: '4399',
     passcodeHint: '提示 4399',
-    lockWallpaper: img('17.jpg'),
-    homeWallpaper: img('7.jpg'),
+    lockWallpaper: img('17.webp'),
+    homeWallpaper: img('7.webp'),
   },
   contacts: story.contacts,
   friends: story.friends,
@@ -294,7 +294,7 @@ export const ifBranch = {
         return {
           ...moment,
           text: ifMomentText['me-shrimp'],
-          image: img('19.jpg'),
+          image: img('19.webp'),
         }
       }
       if (ifMomentText[moment.id]) return { ...moment, text: ifMomentText[moment.id] }
