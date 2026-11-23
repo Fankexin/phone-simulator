@@ -1,6 +1,7 @@
 /** if 线：修改 me-oil 评论后整线切换。各组均为整组替换，未改动的条目从 story 复制。 */
 import { story } from './story.js'
 import collarThumb from '../images/pic/4.webp'
+import { img } from './media.js'
 
 const ifMomentText = {
   'me-shrimp': '生日快乐，男朋友。',
@@ -26,7 +27,7 @@ const ifOil = {
   id: 'me-oil',
   contact: 'me',
   at: '2023-10-23T18:40:00',
-  image: 'https://img-reg-ab.imagency.cn/a/202611/18/6afd1c44660f9.jpg',
+  image: img('2.jpg'),
   likes: ['tao', 'zhou'],
   comments: [
     { from: 'tao', text: '那你以后别用笔了。' },
@@ -198,8 +199,8 @@ export const ifBranch = {
     blurb: '捡到陈晃的手机。微信置顶着陶稚元，最后一条是“车修好了。你坐后面。”',
     passcode: '4399',
     passcodeHint: '提示 4399',
-    lockWallpaper: 'https://img-reg-ab.imagency.cn/a/202611/18/6afd1c4d8e9fb.jpg',
-    homeWallpaper: 'https://img-reg-ab.imagency.cn/a/202611/18/6afd1d9301717.jpg',
+    lockWallpaper: img('17.jpg'),
+    homeWallpaper: img('7.jpg'),
   },
   contacts: story.contacts,
   friends: story.friends,
@@ -293,7 +294,7 @@ export const ifBranch = {
         return {
           ...moment,
           text: ifMomentText['me-shrimp'],
-          image: 'https://img-reg-ab.imagency.cn/a/202611/18/6afd1c4c1dec5.jpg',
+          image: img('19.jpg'),
         }
       }
       if (ifMomentText[moment.id]) return { ...moment, text: ifMomentText[moment.id] }
