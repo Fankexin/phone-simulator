@@ -31,13 +31,12 @@ const views = {
 }
 
 const appView = computed(() => views[phone.route.value?.app] || null)
+/** 只在锁屏 / 主屏 / 换应用时换 key；应用内跳转由各 App 自己切视图，避免整页 rise 重挂造成晃动 */
 const screenKey = computed(() => {
-  const current = phone.route.value
   if (phone.progress.phase !== 'home') return phone.progress.phase
+  const current = phone.route.value
   if (!current) return 'home'
-  return [current.app, current.view, current.thread, current.day, current.note, current.contact, current.favorite, current.channel]
-    .filter(Boolean)
-    .join(':')
+  return current.app
 })
 
 const showGripTip = ref(false)

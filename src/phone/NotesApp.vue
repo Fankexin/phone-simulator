@@ -16,6 +16,7 @@ function preview(body) {
 </script>
 
 <template>
+  <div class="shell">
   <section v-if="note" class="detail">
     <header class="bar">
       <button type="button" @click="pop">
@@ -75,9 +76,19 @@ function preview(body) {
       </button>
     </footer>
   </section>
+  </div>
 </template>
 
 <style scoped>
+.shell {
+  background: #f2f2f7;
+}
+
+.shell > section {
+  position: absolute;
+  inset: 0;
+}
+
 section {
   position: relative;
   height: 100%;

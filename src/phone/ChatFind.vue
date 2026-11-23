@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import Avatar from './Avatar.vue'
 import { usePhone } from './usePhone.js'
 
@@ -11,6 +11,9 @@ const props = defineProps({
 
 const phone = usePhone()
 const { pop } = phone
+const paneEl = ref(null)
+const logEl = ref(null)
+const dayReady = ref(false)
 const thread = computed(() => phone.story.threads.find((item) => item.id === props.threadId))
 const contact = computed(() => phone.contactOf(thread.value?.contact))
 const me = computed(() => phone.contactOf('me'))
@@ -29,7 +32,14 @@ const title = computed(() => {
   if (props.mode === 'day') return contact.value?.name || '聊天记录'
   return '查找聊天内容'
 })
-const dayMessages = computed(() => phone.historyOf(props.threadId, props.day))
+
+/** 历史记录整段时间线（与当前会话 script 分开）；点日期只负责跳转到当天 */
+const historyMessages = computed(() => {
+  const history = thread.value?.history || {}
+  return Object.keys(history)
+    .sort()
+    .flatMap((day) => (history[day] || []).map((msg) => ({ ...msg, day })))
+})
 
 function daysInMonth(year, month) {
   return new Date(year, month, 0).getDate()
@@ -62,11 +72,45 @@ function pickDay(year, month, day) {
   phone.openFindDay(props.threadId, key)
 }
 
+function isFirstOfDay(index) {
+  const list = historyMessages.value
+  const current = list[index]
+  const previous = list[index - 1]
+  return !previous || previous.day !== current.day
+}
+
 function showTime(index) {
-  const current = dayMessages.value[index]
-  const previous = dayMessages.value[index - 1]
+  const list = historyMessages.value
+  const current = list[index]
+  const previous = list[index - 1]
   return !previous || previous.time !== current.time
 }
+
+async function scrollToDay(day) {
+  dayReady.value = false
+  if (!day) {
+    dayReady.value = true
+    return
+  }
+  await nextTick()
+  const pane = paneEl.value
+  const anchor = logEl.value?.querySelector(`[data-day-anchor="${day}"]`)
+  if (pane && anchor) {
+    // 只滚聊天列表容器，避免 scrollIntoView 带动外层页面晃动
+    const delta = anchor.getBoundingClientRect().top - pane.getBoundingClientRect().top
+    pane.scrollTop += delta
+  }
+  dayReady.value = true
+}
+
+watch(
+  () => [props.mode, props.day],
+  () => {
+    if (props.mode === 'day') scrollToDay(props.day)
+    else dayReady.value = false
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -122,10 +166,22 @@ function showTime(index) {
       <p v-else class="hint">仅可查看有记录的日期</p>
     </div>
 
-    <div v-else class="pane day">
-      <div class="log">
-        <template v-for="(msg, index) in dayMessages" :key="msg.id">
-          <p v-if="showTime(index)" class="stamp">{{ msg.time }}</p>
+    <div v-else ref="paneEl" class="pane day">
+      <div ref="logEl" class="log" :class="{ ready: dayReady }">
+        <template v-for="(msg, index) in historyMessages" :key="`${msg.day}-${msg.id}`">
+          <p
+            v-if="showTime(index)"
+            class="stamp"
+            :data-day-anchor="isFirstOfDay(index) ? msg.day : undefined"
+          >
+            {{ msg.time }}
+          </p>
+          <i
+            v-else-if="isFirstOfDay(index)"
+            class="day-anchor"
+            :data-day-anchor="msg.day"
+            aria-hidden="true"
+          />
           <p v-if="msg.from === 'system'" class="system">{{ msg.text }}</p>
           <div v-else class="line" :class="{ me: msg.from === 'me' }">
             <button
@@ -149,7 +205,7 @@ function showTime(index) {
             </button>
           </div>
         </template>
-        <p v-if="!dayMessages.length" class="empty">这一天没有聊天记录</p>
+        <p v-if="!historyMessages.length" class="empty">没有聊天记录</p>
       </div>
     </div>
   </section>
@@ -328,6 +384,17 @@ header svg,
 
 .day .log {
   padding: 12px 10px 20px;
+  opacity: 0;
+}
+
+.day .log.ready {
+  opacity: 1;
+}
+
+.day-anchor {
+  display: block;
+  height: 0;
+  overflow: hidden;
 }
 
 .stamp,
