@@ -1,7 +1,9 @@
 import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
+import { preloadAssets } from './preloadAssets.js'
 
+preloadAssets()
 createApp(App).mount('#app')
 
 // 临时隐藏 Netlify Free 角标（#nl-badge-frame）；后台能关掉后可删

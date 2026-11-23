@@ -6,3 +6,8 @@ export function img(name) {
   if (!url) throw new Error(`[story] missing image: ${name}`)
   return url
 }
+
+/** 全部剧情图 URL（构建后为 hashed 资源路径） */
+export function allStoryImageUrls() {
+  return Object.values(files).filter(Boolean)
+}
